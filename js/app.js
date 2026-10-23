@@ -358,23 +358,32 @@ function renderScore() {
   for (const c of model.changes.values()) mTotal += c.deltaM;
   const paused = model.pausedMandatoryCount();
   const flag = $("#mand-flag");
-  let state, icon, text;
+  // Each message has a one-line short form for phones.
+  let state, icon, text, short;
   if (Math.abs(mTotal) > 0.05) {
     state = "changed"; icon = "⚠";
     text = `Your plan changes mandatory programs by ${fmt(mTotal, { sign: true })}. That requires Congress to change existing law.`;
+    short = `Mandatory programs ${fmt(mTotal, { sign: true })}: needs a new law`;
   } else if (!lockedM) {
     state = "unlocked"; icon = "⚠";
     text = "Mandatory programs unlocked. Changing them requires Congress to rewrite existing law.";
+    short = "Mandatory unlocked: changes need a new law";
   } else if (paused) {
     state = "paused"; icon = "⏸";
     text = `${paused} mandatory change${paused > 1 ? "s are" : " is"} paused while mandatory programs are locked.`;
+    short = `${paused} mandatory change${paused > 1 ? "s" : ""} paused (locked)`;
   } else {
     state = "locked"; icon = "🔒";
     text = `${lockedShare}% of spending (mandatory programs and interest) is locked. You can change the other ${100 - lockedShare}%.`;
+    short = `${lockedShare}% of spending is locked (mandatory + interest)`;
   }
   flag.dataset.state = state;
   $("#mand-flag-icon").textContent = icon;
-  $("#mand-flag-text").textContent = text;
+  const t = $("#mand-flag-text");
+  t.textContent = "";
+  const L = document.createElement("span"); L.className = "long"; L.textContent = text;
+  const S = document.createElement("span"); S.className = "short"; S.textContent = short;
+  t.append(L, S);
 }
 
 // ---------- changes ----------

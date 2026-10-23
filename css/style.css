@@ -74,6 +74,7 @@ button { font: inherit; color: inherit; }
 .seg-legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .seg-legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .seg-legend [data-leg=I]::after, .seg-legend.m-locked [data-leg=M]::after { content: "🔒"; font-size: 10px; }
+#mand-flag-text .short { display: none; }
 .mand-flag { display: flex; gap: 7px; align-items: flex-start; margin-top: 8px; font-size: 13px; line-height: 1.35;
   border-radius: 8px; padding: 6px 10px; min-height: calc(1.35em + 12px); transition: background .2s, color .2s; }
 .mand-flag[data-state=locked], .mand-flag[data-state=paused] { color: var(--muted); background: var(--x-bg); }
@@ -434,9 +435,13 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
   .score .val { font-size: 16px; }
   .score.big .val { font-size: 22px; }
   .meter { margin-top: 4px; }
-  .mand-flag { font-size: 12px; padding: 4px 8px; margin-top: 6px; min-height: calc(2 * 1.35em + 8px); }
-  .score.big .sub { min-height: 2.6em; }
-  .seg-legend { gap: 1px 10px; font-size: 11px; }
+  .mand-flag { font-size: 12px; padding: 3px 8px; margin-top: 5px; align-items: center; }
+  #mand-flag-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #mand-flag-text .long { display: none; }
+  #mand-flag-text .short { display: inline; }
+  /* Keep the sticky bar small on phones: the segment legend is left to the bar's colors and the tabs below. */
+  .seg-legend { display: none; }
+  .score.big .sub { min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .row .amt { min-width: 112px; }
   .legend-note { margin-left: 0; }
   .proj-headline { font-size: 15px; }
