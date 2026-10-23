@@ -4,6 +4,7 @@ import { makeCtx, scoreAll, addLevers, taxBreakLevers, taxCurveLever } from "./l
 import { initRevenue, renderRevenue, updateRevenue, revenueChanges, PHASES } from "./revenue-ui.js?v=dev";
 import { initProposals, scoreProposals } from "./proposals.js?v=dev";
 import { initProposalsUI, renderProposals, updateProposals, proposalChanges } from "./proposals-ui.js?v=dev";
+import { initSimple, renderSimple, updateSimple } from "./simple-ui.js?v=dev";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -45,6 +46,7 @@ async function init() {
     model.revScore = () => scoreAll(ctx, model).total[fi] * 1000;
     initRevenue(model, ctx, { changed: () => { refresh(); commit(); }, drawer: openDrawerShell });
     initProposalsUI(model, ctx, { changed: () => { refresh(); commit(); }, openDrawer: openDrawerShell });
+    initSimple(model, ctx, { changed: () => { refresh(); commit(); }, advanced: () => setMode("advanced") });
     model.propScore = () => { const sc = scoreProposals(ctx, model); return { spend: sc.spend[fi] * 1000, rev: sc.rev[fi] * 1000 }; };
     initProjections(proj, model, () => { refresh(); commit(); });
   }
@@ -61,6 +63,9 @@ async function init() {
 
   renderTree();
   if (proj) { renderRevenue(); renderProposals(); }
+  let mode = "simple";
+  try { mode = localStorage.getItem("mode") || "simple"; } catch {}
+  setMode(mode, { initial: true });
   refresh();
   wire();
 }
@@ -262,8 +267,31 @@ function refresh() {
   if (!$("[data-panel=projections]").hidden) scheduleProjections();
   if (!$("[data-panel=revenue]").hidden) updateRevenue();
   if (!$("[data-panel=proposals]").hidden) updateProposals();
+  if (!$("#simple").hidden) scheduleSimple();
   updateChangeCount();
   $("#start-over").disabled = model.isDefault();
+}
+
+// ---------- Simple / Advanced ----------
+let simpleTimer;
+function scheduleSimple() { clearTimeout(simpleTimer); simpleTimer = setTimeout(updateSimple, 40); }
+
+function setMode(mode, { initial = false } = {}) {
+  const simple = mode !== "advanced";
+  document.body.classList.toggle("mode-simple", simple);
+  $("#simple").hidden = !simple;
+  document.querySelectorAll("#mode-ctl button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === (simple ? "simple" : "advanced")));
+  try { localStorage.setItem("mode", simple ? "simple" : "advanced"); } catch {}
+  if (simple) {
+    if (!$("#simple").childElementCount) renderSimple(); else updateSimple();
+  } else if (!initial) {
+    // Coming back to Advanced: redraw what may have changed in Simple mode.
+    $("#mand-toggle").checked = model.mandatoryUnlocked;
+    rebuildViews();
+    const tab = document.querySelector("[role=tab][aria-selected=true]")?.dataset.tab;
+    if (tab) selectTab(tab);
+  }
+  if (!initial) window.scrollTo({ top: 0 });
 }
 
 let projTimer;
@@ -617,6 +645,7 @@ function rebuildViews() {
   if ($("#search").value.trim().length >= 2) onSearch(); else renderTree();
   if ($("#revenue").childElementCount) renderRevenue();
   if ($("#proposals").childElementCount) renderProposals();
+  if (!$("#simple").hidden) updateSimple();
   refresh();
   commit();
 }
@@ -629,6 +658,7 @@ function wire() {
     commit();
   });
   $("#search").addEventListener("input", onSearch);
+  document.querySelectorAll("#mode-ctl button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
   $("#phase-global").addEventListener("change", (e) => {
     model.setPhase(+e.target.value);
     refresh();

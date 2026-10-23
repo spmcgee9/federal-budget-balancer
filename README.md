@@ -4,6 +4,16 @@ An interactive tool for trying to balance the U.S. federal budget. It starts fro
 
 Companion to the Federal Budget Explorer.
 
+## Simple and Advanced modes (Phase 7)
+
+The tool opens in **Simple** mode: one page with about 17 big, familiar levers and a 30-year debt chart.
+
+- **Spending:** Social Security, Medicare, Medicaid and health subsidies, defense, "everything else the government runs" (nondefense appropriations), and foreign aid, each −50% to +50%.
+- **Taxes:** income tax on high earners (35% and 37% brackets) and on the middle class (12%, 22%, 24%), the corporate rate, the Social Security tax cap, and tariffs.
+- **Big proposals:** single-payer, universal pre-K, free public college, the 2021 Child Tax Credit, ending tax on Social Security benefits, and tariff rebate checks.
+
+Simple levers write into the same plan as **Advanced** mode (everything below), so switching never loses work. If Advanced changes can't be shown as a simple slider, Simple mode says so ("adjusted in Advanced mode" / "plus N detailed changes"). The chosen mode is remembered in the browser.
+
 ## Spending (Phase 1)
 
 - **Spending tree by budget function** (National Defense, Health, Medicare, Social Security…), drilling down to subfunctions, agencies/bureaus, and individual budget accounts.
@@ -126,7 +136,7 @@ Then visit http://localhost:8000.
 4. ✅ Editable income-tax curve calibrated to IRS income data
 5. ✅ Economic assumptions (growth, interest rates, OMB vs. CBO forecasts, debt feedback) and behavioral response settings
 6. ✅ Proposed new programs and tax cuts (single-payer, pre-K, child care, UBI, free college, Social Security tax, tariff rebates…)
-7. Simple mode (default) with an Advanced toggle
+7. ✅ Simple mode (default) with an Advanced toggle
 8. Methodology and About page
 9. UI clean-up
 

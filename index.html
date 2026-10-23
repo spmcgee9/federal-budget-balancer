@@ -17,7 +17,13 @@
         <h1>US Federal Budget Balancer</h1>
         <p class="tagline">Start from the President's <span data-fy>FY</span> budget. Cut it, grow it, or zero it out, and see what happens to the deficit.</p>
       </div>
-      <button class="btn ghost start-over" id="start-over" disabled title="Undo every change and go back to the President's budget">↺ Start over</button>
+      <div class="masthead-actions">
+        <div class="seg-ctl mode-ctl" role="group" aria-label="Detail level" id="mode-ctl">
+          <button data-mode="simple" aria-pressed="true">Simple</button>
+          <button data-mode="advanced" aria-pressed="false">Advanced</button>
+        </div>
+        <button class="btn ghost start-over" id="start-over" disabled title="Undo every change and go back to the President's budget">↺ Start over</button>
+      </div>
     </div>
   </header>
 
@@ -59,6 +65,7 @@
   </section>
 
   <main class="wrap">
+    <section id="simple" class="simple" hidden></section>
     <div class="toolbar">
       <nav class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="spending">Spending</button>

@@ -212,6 +212,15 @@ export class BudgetModel {
     this.recompute();
   }
 
+  // Set a node directly (used by Simple mode). m = whether the setting reaches mandatory programs.
+  setNodeRaw(id, pct, m) {
+    const n = this.nodes.get(id);
+    if (!n) return;
+    if (n.children) this.#clearBelow(n);
+    if (Math.abs(pct) < 1e-9) this.settings.delete(id);
+    else this.settings.set(id, { on: true, pct, m: !!m });
+  }
+
   #ancestorSetting(n) {
     for (let p = n.parent; p; p = p.parent) if (this.settings.has(p.id)) return true;
     return false;
@@ -291,12 +300,13 @@ export class BudgetModel {
   // Full-strength dollar change from the user's plan, by projection category, phase-in length,
   // and OMB year (millions). The projection applies the phase-in itself, so that a 10-year
   // phase-in keeps ramping after OMB's last year.
-  yearDeltas() {
+  yearDeltas(onlyIds = null) {
     const years = this.meta.years;
     const out = {};
     for (const leaf of this.leaves) {
       const d = this.decidingSetting(leaf);
       if (!d) continue;
+      if (onlyIds && !onlyIds.has(d[0])) continue;
       const c = this.projCat(leaf);
       if (!c) continue;
       const N = this.phaseOf(d[1]);

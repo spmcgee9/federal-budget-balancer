@@ -313,3 +313,18 @@ function syncAssumptions() {
   const reset = $("#assume-reset");
   if (reset) reset.disabled = !ch;
 }
+
+// Used by Simple mode: the projection for the current plan, and a spending-only projection for a subset of settings.
+export function computeResults() {
+  if (!P || !model) return null;
+  const ps = proposalScores();
+  const rv = revenueScores().total.map((v, i) => v + (ps ? ps.rev[i] : 0));
+  const res = project(P, { deltas: model.yearDeltas(), rev: rv, newSpend: ps?.spend, assume: model.assume });
+  return { res, sum: summarize(P, res), P };
+}
+export function spendingTenYear(ids) {
+  if (!P || !model) return 0;
+  const r = project(P, { deltas: model.yearDeltas(new Set(ids)) });
+  const Y = r.years;
+  return r.userSpend.reduce((s, v, i) => s + (Y[i] >= P.planStart && Y[i] < P.planStart + 10 ? v : 0), 0);
+}
