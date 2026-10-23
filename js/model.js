@@ -46,6 +46,9 @@ export class BudgetModel {
     this.rev = new Map();      // revenue lever id -> value
     this.revPh = new Map();    // revenue lever id -> phase-in years override
     this.revScore = null;      // set by the app: () => FY budget-year revenue change (millions)
+    this.prop = new Map();     // proposal id -> { opt, amt? }
+    this.propPh = new Map();   // proposal id -> phase-in override
+    this.propScore = null;     // set by the app: () => { spend, rev } in the budget year (millions)
     this.assume = { ...ASSUME_DEFAULTS }; // economic and behavioral assumptions (Projections tab)
     this.recompute();
   }
@@ -141,17 +144,20 @@ export class BudgetModel {
       }
     }
     // Spending split for the scoreboard bar: mandatory, net interest, defense and nondefense discretionary.
-    this.seg = { base: { M: 0, I: 0, DD: 0, ND: 0 }, eff: { M: 0, I: 0, DD: 0, ND: 0 } };
+    this.seg = { base: { M: 0, I: 0, DD: 0, ND: 0, NEW: 0 }, eff: { M: 0, I: 0, DD: 0, ND: 0, NEW: 0 } };
     for (const leaf of this.leaves) {
       const k = leaf.cat === "I" ? "I" : leaf.cat === "M" ? "M" : leaf.fn.code === "050" ? "DD" : "ND";
       this.seg.base[k] += leaf.v[bi] || 0;
       this.seg.eff[k] += this.leafValue(leaf);
     }
     this.totalOutlays = this.roots.reduce((s, r) => s + r.base, 0);
-    this.planOutlays = this.roots.reduce((s, r) => s + r.eff, 0);
+    const ps = this.propScore ? this.propScore() : { spend: 0, rev: 0 };
+    this.propSpend = ps.spend; this.propRev = ps.rev;
+    this.seg.eff.NEW = Math.max(0, ps.spend);
+    this.planOutlays = this.roots.reduce((s, r) => s + r.eff, 0) + ps.spend;
     this.totalReceipts = this.receipts.reduce((s, r) => s + (r.v[bi] || 0), 0);
     this.revDelta = this.revScore ? this.revScore() : 0;
-    this.planReceipts = this.totalReceipts + this.revDelta;
+    this.planReceipts = this.totalReceipts + this.revDelta + ps.rev;
   }
 
   // Composition of a node: "D", "M", "X" (computed/offsets) or "mixed".
@@ -227,6 +233,8 @@ export class BudgetModel {
 
   resetAll() {
     this.settings.clear();
+    this.prop.clear();
+    this.propPh.clear();
     this.rev.clear();
     this.revPh.clear();
     this.phase = 0;
@@ -251,7 +259,10 @@ export class BudgetModel {
     this.recompute();
   }
 
-  hasChanges() { return this.settings.size > 0 || this.rev.size > 0; }
+  hasChanges() { return this.settings.size > 0 || this.rev.size > 0 || this.prop.size > 0; }
+
+  setProp(id, st) { if (st) this.prop.set(id, st); else { this.prop.delete(id); this.propPh.delete(id); } this.recompute(); }
+  setPropPhase(id, n) { if (n == null) this.propPh.delete(id); else this.propPh.set(id, n); this.recompute(); }
 
   setMandatoryUnlocked(v) {
     this.mandatoryUnlocked = v;
@@ -347,6 +358,10 @@ export class BudgetModel {
     for (const k of Object.keys(ASSUME_DEFAULTS)) {
       if (this.assume[k] !== ASSUME_DEFAULTS[k]) parts.push(`a.${k}=${this.assume[k] === true ? 1 : this.assume[k] === false ? 0 : this.assume[k]}`);
     }
+    for (const [id, st] of this.prop) {
+      const ph = this.propPh.get(id);
+      parts.push(`p.${id}=${st.opt}${st.amt != null ? "_" + st.amt : ""}${ph != null ? "~" + ph : ""}`);
+    }
     for (const [id, v] of this.rev) {
       const ph = this.revPh.get(id);
       parts.push(`r.${id}=${typeof v === "number" ? +v.toFixed(4) : v}${ph != null ? "~" + ph : ""}`);
@@ -361,6 +376,8 @@ export class BudgetModel {
     this.settings.clear();
     this.rev.clear();
     this.revPh.clear();
+    this.prop.clear();
+    this.propPh.clear();
     this.phase = 0;
     this.assume = { ...ASSUME_DEFAULTS };
     for (const p of str.split(";").slice(1)) {
@@ -374,6 +391,14 @@ export class BudgetModel {
       if (p === "m1") { this.mandatoryUnlocked = true; continue; }
       if (p === "m0") { this.mandatoryUnlocked = false; continue; }
       if (/^ph\d+$/.test(p)) { this.phase = +p.slice(2); continue; }
+      if (p.startsWith("p.")) {
+        const [kv, ph] = p.slice(2).split("~");
+        const [id, raw] = kv.split("=");
+        const [opt, amt] = (raw || "mid").split("_");
+        this.prop.set(id, amt != null && amt !== "" ? { opt, amt: +amt } : { opt });
+        if (ph != null && ph !== "") this.propPh.set(id, +ph);
+        continue;
+      }
       if (p.startsWith("r.")) {
         const [kv, ph] = p.slice(2).split("~");
         const [id, raw] = kv.split("=");

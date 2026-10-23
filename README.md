@@ -59,6 +59,15 @@ An **Economic and behavioral assumptions** panel at the top of the Projections t
 
 Assumptions are saved in share links and reset by "Start over."
 
+## Proposals (Phase 6)
+
+The **Proposals** tab lists programs and tax cuts that have been proposed but aren't law: single-payer health care, a public option, Medicare dental/vision/hearing, the 2021 expanded Child Tax Credit, universal pre-K, a child care guarantee, paid family leave, baby bonds, tuition-free public college, student debt cancellation, free school meals, universal basic income, and tax-cut proposals (making the 2025 law's temporary deductions and $40,000 SALT cap permanent, ending income tax on Social Security benefits, and $2,000 tariff rebate checks).
+
+- Each proposal cites its estimate (CBO wherever possible; otherwise CRFB, Penn Wharton, Georgetown, and others). Where estimates disagree there's a low/middle/high choice. Estimates are scaled to today's economy as a constant share of GDP; older ones are tagged.
+- UBI is computed from CBO's population projections; the 2025-law and SALT extensions from OMB's tax expenditure data.
+- Each has a default phase-in (for example, four years for single-payer) that can be overridden. Costs don't include any financing the sponsors proposed; pair them with Revenue tab levers instead.
+- Costs flow into the scoreboard (a "New programs" share of spending), Your changes, projections (a "New programs" layer), and share links. Definitions and sources are in `data/proposals.json`.
+
 ## Data
 
 - `data/budget.json`: OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Built by `scripts/build_data.py`.
@@ -116,7 +125,10 @@ Then visit http://localhost:8000.
 3. ✅ Revenue levers (income, capital gains, corporate, payroll, estate, excise, tariffs, new taxes, tax breaks) and phase-ins
 4. ✅ Editable income-tax curve calibrated to IRS income data
 5. ✅ Economic assumptions (growth, interest rates, OMB vs. CBO forecasts, debt feedback) and behavioral response settings
-6. Proposed new programs (universal health care, universal pre-K, UBI, free college…)
+6. ✅ Proposed new programs and tax cuts (single-payer, pre-K, child care, UBI, free college, Social Security tax, tariff rebates…)
+7. Simple mode (default) with an Advanced toggle
+8. Methodology and About page
+9. UI clean-up
 
 ## Caveats
 

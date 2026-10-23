@@ -252,6 +252,7 @@ def main():
         "tariff": tariff,                                     # customs revenue lost vs. Feb baseline
         "pop": [round(pop[y], 2) for y in years] if pop else None,
         "gdpCY2023": round(gdp_cy[2023] * 1000, 1),
+        "gdpHist": {str(y): round(gdp_cy[y] * 1000, 1) for y in sorted(gdp_cy) if 2010 <= y <= 2056},  # calendar nominal GDP, $B
         "omb": {"gdpRatio": omb_ratio, "dr": omb_dr, "url": OMB_URL,
                 "note": "OMB FY2027 economic assumptions vs. CBO Feb 2026; held at 2036 levels afterward"},                # calendar-2023 nominal GDP, $B (for IRS 2023 data)
         "wages": [round(wages[y] * 1000, 1) for y in years],      # wage and salary disbursements, $B (calendar year)

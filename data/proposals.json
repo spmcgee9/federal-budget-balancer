@@ -1,0 +1,487 @@
+{
+  "_note": "Proposals users can switch on. Each option's cost is scaled to today's economy as a constant share of GDP unless noted. kinds: window = S ($B) over years from-to; annual = amt ($B) in a given year; gdp = pct of GDP; once = one-time amt ($B) in a year; ubi = computed from population; te_extend / salt = computed from OMB tax expenditure data. 'split' divides the cost between new spending and lower revenue (or, for savings, higher revenue).",
+  "groups": [
+    {
+      "id": "health",
+      "name": "Health care"
+    },
+    {
+      "id": "family",
+      "name": "Children and families"
+    },
+    {
+      "id": "edu",
+      "name": "Education"
+    },
+    {
+      "id": "income",
+      "name": "Income support"
+    },
+    {
+      "id": "tax",
+      "name": "Tax-cut proposals",
+      "note": "Proposals to lower taxes. Each is a cost to the budget."
+    }
+  ],
+  "proposals": [
+    {
+      "id": "single_payer",
+      "group": "health",
+      "name": "Single-payer health care (Medicare for All)",
+      "phase": 4,
+      "desc": "One government plan covers everyone, replacing private insurance, Medicaid, and most out-of-pocket costs. The federal cost is large because spending that households and employers now pay moves onto the federal budget; total national health spending changes much less (CBO: from $0.7 trillion lower to $0.3 trillion higher in 2030, depending on design). The estimate is for federal spending only: it doesn't count the extra income and payroll tax revenue as employers shift money from health benefits to taxable wages, or the premiums households would no longer pay.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "low",
+          "label": "Low",
+          "kind": "gdp",
+          "pct": 4.5,
+          "note": "CBO's least costly design: about $1.5 trillion a year in 2030 (cost sharing, lower provider payments)"
+        },
+        {
+          "key": "mid",
+          "label": "Middle",
+          "kind": "gdp",
+          "pct": 6.75,
+          "note": "Midpoint of CBO's range: about $2.25 trillion a year in 2030"
+        },
+        {
+          "key": "high",
+          "label": "High",
+          "kind": "gdp",
+          "pct": 9.0,
+          "note": "CBO's most generous design: about $3.0 trillion a year in 2030 (no cost sharing, long-term care)"
+        }
+      ],
+      "source": {
+        "name": "CBO, How CBO Analyzes the Costs of Proposals for Single-Payer Health Care Systems (Dec 2020): federal subsidies $1.5\u20133.0 trillion higher in 2030",
+        "url": "https://www.cbo.gov/publication/56811"
+      }
+    },
+    {
+      "id": "public_option",
+      "group": "health",
+      "name": "Public option on the ACA marketplaces",
+      "phase": 3,
+      "older": true,
+      "desc": "A government-run plan offered alongside private plans on the ACA marketplaces, paying doctors and hospitals close to Medicare rates and charging premiums that cover its costs. Because it would be cheaper than private plans, it lowers premium subsidies, so CBO estimated it would reduce deficits. Most of the savings come from higher tax revenue as employers shift some compensation from health benefits to wages.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO estimate",
+          "kind": "window",
+          "S": -158,
+          "from": 2014,
+          "to": 2023,
+          "split": {
+            "spend": 0.23,
+            "rev": 0.77
+          },
+          "note": "Reduces deficits by $158 billion over 2014\u20132023 (outlays \u2212$37 billion, revenues +$121 billion)"
+        }
+      ],
+      "source": {
+        "name": "CBO, Budget Options 2013: Add a public plan to the health insurance exchanges",
+        "url": "https://www.cbo.gov/budget-options/2013/44890"
+      }
+    },
+    {
+      "id": "medicare_dvh",
+      "group": "health",
+      "name": "Add dental, vision, and hearing coverage to Medicare",
+      "phase": 3,
+      "desc": "Traditional Medicare doesn't cover most dental care, eyeglasses, or hearing aids. This adds them as standard benefits. In CBO's estimate, dental is about two-thirds of the cost.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO estimate",
+          "kind": "window",
+          "S": 358,
+          "from": 2020,
+          "to": 2029,
+          "note": "$358 billion over 2020\u20132029 (dental $238 billion, vision $30 billion, hearing $89 billion)"
+        }
+      ],
+      "source": {
+        "name": "CBO estimate of H.R. 3, Title VI (2019), as reported by AJMC",
+        "url": "https://ajmc.com/view/ada-vs-cbo-including-dental-coverage-under-medicare"
+      }
+    },
+    {
+      "id": "ctc_arpa",
+      "group": "family",
+      "name": "Bring back the 2021 expanded Child Tax Credit, permanently",
+      "phase": 0,
+      "older": true,
+      "desc": "In 2021 the credit was raised to $3,600 for children under 6 and $3,000 for older children, paid monthly, and made fully refundable so families with little or no income got the full amount. Child poverty fell sharply while it was in effect. Because the 2025 law already raised the credit to $2,200, restoring the 2021 version today would cost somewhat less than CBO's original estimate.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO estimate",
+          "kind": "window",
+          "S": 1600,
+          "from": 2022,
+          "to": 2031,
+          "split": {
+            "spend": 0.7,
+            "rev": 0.3
+          },
+          "note": "$1.6 trillion over 2022\u20132031 (most of it refundable payments, counted as spending)"
+        }
+      ],
+      "source": {
+        "name": "CBO estimate cited by the Peter G. Peterson Foundation",
+        "url": "https://pgpf.org/article/what-are-the-costs-of-permanently-expanding-the-ctc-and-the-eitc"
+      }
+    },
+    {
+      "id": "prek",
+      "group": "family",
+      "name": "Universal pre-K for 3- and 4-year-olds",
+      "phase": 3,
+      "desc": "Free, publicly funded preschool for every 3- and 4-year-old, as in the 2021 Build Back Better proposal. Costs depend on how many families enroll and how much teachers are paid.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "low",
+          "label": "Low",
+          "kind": "window",
+          "S": 351,
+          "from": 2023,
+          "to": 2032,
+          "note": "Penn Wharton Budget Model: $351 billion over 2023\u20132032, including buildout"
+        },
+        {
+          "key": "mid",
+          "label": "Middle",
+          "kind": "annual",
+          "amt": 59,
+          "year": 2021,
+          "note": "Concord Coalition: $59 billion a year net of current spending, at 85% participation (2021)"
+        },
+        {
+          "key": "high",
+          "label": "High",
+          "kind": "annual",
+          "amt": 100,
+          "year": 2021,
+          "note": "Concord Coalition: $100 billion a year gross (2021)"
+        }
+      ],
+      "source": {
+        "name": "Penn Wharton Budget Model (2022); Concord Coalition, The Potential Cost of New Entitlements (2021)",
+        "url": "https://budgetmodel.wharton.upenn.edu/issues/2022/6/2/total-cost-of-universal-pre-k"
+      }
+    },
+    {
+      "id": "childcare",
+      "group": "family",
+      "name": "Affordable child care guarantee",
+      "phase": 3,
+      "desc": "Federal subsidies so that families pay no more than 7% of income for child care for children under 5, as proposed in 2021. The cost depends heavily on how many families use paid care once it's subsidized and how much providers are paid.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "low",
+          "label": "Low",
+          "kind": "annual",
+          "amt": 35,
+          "year": 2021,
+          "note": "Concord Coalition low-end estimate: $35 billion a year (2021)"
+        },
+        {
+          "key": "mid",
+          "label": "Middle",
+          "kind": "annual",
+          "amt": 170,
+          "year": 2021,
+          "note": "American Action Forum: $170 billion a year (2021)"
+        },
+        {
+          "key": "high",
+          "label": "High",
+          "kind": "annual",
+          "amt": 207,
+          "year": 2021,
+          "note": "Concord Coalition high-end estimate: $207 billion a year (2021)"
+        }
+      ],
+      "source": {
+        "name": "American Action Forum (2021); Concord Coalition (2021)",
+        "url": "https://www.americanactionforum.org/insight/build-back-better-child-care-subsidies-and-universal-pre-k/"
+      }
+    },
+    {
+      "id": "paid_leave",
+      "group": "family",
+      "name": "National paid family and medical leave (12 weeks)",
+      "phase": 2,
+      "older": true,
+      "desc": "Up to 12 weeks of partially paid leave to care for a new child, a seriously ill family member, or one's own illness, as in the FAMILY Act. The U.S. is the only wealthy country without a national paid leave program. The FAMILY Act included a small payroll tax to help pay for it; this estimate is the spending alone.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO estimate",
+          "kind": "window",
+          "S": 547,
+          "from": 2020,
+          "to": 2029,
+          "note": "$547 billion over ten years (2019 estimate)"
+        }
+      ],
+      "source": {
+        "name": "CBO estimate of the FAMILY Act (2019), as cited by KFF",
+        "url": "https://www.kff.org/policy-watch/universal-paid-family-medical-leave-under-consideration-congress/"
+      }
+    },
+    {
+      "id": "baby_bonds",
+      "group": "family",
+      "name": "Baby bonds",
+      "phase": 0,
+      "desc": "A government-funded savings account for every child at birth, with $1,000 deposited up front and up to $2,000 a year more for children in lower-income families. The money grows until age 18 and can be used for college, a home, or starting a business.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CRFB estimate",
+          "kind": "window",
+          "S": 650,
+          "from": 2020,
+          "to": 2029,
+          "note": "CRFB: roughly $650 billion over a decade"
+        },
+        {
+          "key": "alt",
+          "label": "Sponsor's estimate",
+          "kind": "annual",
+          "amt": 60,
+          "year": 2019,
+          "note": "Sen. Booker's estimate: about $60 billion a year (2019)"
+        }
+      ],
+      "source": {
+        "name": "Committee for a Responsible Federal Budget, Cory Booker's 'Baby Bonds' Plan",
+        "url": "https://www.crfb.org/blogs/cory-bookers-baby-bonds-plan"
+      }
+    },
+    {
+      "id": "free_college",
+      "group": "edu",
+      "name": "Tuition-free public college",
+      "phase": 0,
+      "desc": "Free tuition at public two- and four-year colleges. Proposals typically split the cost with states; this estimate is the total cost, so the federal share could be lower.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "Georgetown estimate",
+          "kind": "annual",
+          "amt": 58.2,
+          "year": 2021,
+          "note": "Georgetown Center on Education and the Workforce: $58.2 billion in the first year, about $800 billion over 10 years"
+        }
+      ],
+      "source": {
+        "name": "Georgetown University Center on Education and the Workforce, The Dollars and Sense of Free College (2020)",
+        "url": "https://cew.georgetown.edu/cew-reports/freecollegecost/"
+      }
+    },
+    {
+      "id": "student_debt",
+      "group": "edu",
+      "name": "Cancel student debt ($10,000, or $20,000 for Pell recipients)",
+      "phase": 0,
+      "older": true,
+      "desc": "One-time cancellation of up to $10,000 of federal student debt per borrower ($20,000 for those who received Pell Grants), for people earning under $125,000. This is the 2022 plan the Supreme Court struck down in 2023; it would now need an act of Congress. The cost is booked once, in the year it happens.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO estimate",
+          "kind": "once",
+          "amt": 400,
+          "note": "CBO: about $400 billion (2022)"
+        }
+      ],
+      "source": {
+        "name": "CBO estimate of the 2022 student debt cancellation plan, as reported by NASFAA",
+        "url": "https://www.nasfaa.org/news-item/28033/CBO_Estimates_400_Billion_for_Biden_s_Student_Loan_Debt_Cancellation_Plans"
+      }
+    },
+    {
+      "id": "school_meals",
+      "group": "edu",
+      "name": "Free school meals for all students",
+      "phase": 0,
+      "desc": "Free breakfast, lunch, and a snack for every public school student, regardless of family income, as in the Universal School Meals Program Act.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "Estimate",
+          "kind": "annual",
+          "amt": 11,
+          "year": 2021,
+          "note": "About $11 billion a year (2021)"
+        }
+      ],
+      "source": {
+        "name": "Universal School Meals Program Act estimate, as reported in 2021",
+        "url": "https://www.nny360.com/communitynews/education/free-school-meals-for-all-with-11-billion-a-year-federal-price-tag-proposed-in/article_f6485d9e-eca9-5d34-9651-9cff7f116f19.html"
+      }
+    },
+    {
+      "id": "ubi",
+      "group": "income",
+      "name": "Universal basic income",
+      "phase": 0,
+      "amount": {
+        "min": 100,
+        "max": 2000,
+        "step": 50,
+        "def": 1000
+      },
+      "desc": "A monthly cash payment to every adult, with no conditions, indexed to inflation. The cost is simply the payment times the number of adults (about 78% of the population, from CBO's population projections). Proposals usually pair it with new taxes and let people trade existing benefits for it; neither offset is counted here, so this is the gross cost.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "Computed",
+          "kind": "ubi",
+          "note": "Monthly amount x 12 x adults"
+        }
+      ],
+      "source": {
+        "name": "Computed from CBO's population projections (Feb 2026)",
+        "url": "https://www.cbo.gov/publication/62044"
+      }
+    },
+    {
+      "id": "obbba_perm",
+      "group": "tax",
+      "name": "Make the 2025 law's temporary deductions permanent",
+      "phase": 0,
+      "desc": "The 2025 reconciliation law's deductions for tip income, overtime pay, interest on new U.S.-assembled car loans, and the extra $6,000 deduction for seniors all expire after 2028. This keeps them going, at their 2028 cost grown with the economy.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "OMB-based",
+          "kind": "te_extend",
+          "te": "te_obbba",
+          "last": 2028,
+          "note": "Extends OMB's 2028 tax expenditure estimate, growing with GDP"
+        }
+      ],
+      "source": {
+        "name": "Computed from OMB, Analytical Perspectives FY2027, Table 10-1",
+        "url": "https://www.whitehouse.gov/omb/information-resources/budget/analytical-perspectives/"
+      }
+    },
+    {
+      "id": "salt_perm",
+      "group": "tax",
+      "name": "Keep the $40,000 SALT cap permanently",
+      "phase": 0,
+      "desc": "The 2025 law raised the cap on deducting state and local taxes from $10,000 to $40,000 through 2029 for most taxpayers, after which it falls back to $10,000. This keeps the higher cap. Most of the benefit goes to higher-income households in high-tax states.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "OMB-based",
+          "kind": "salt",
+          "te": "te_salt",
+          "last": 2029,
+          "note": "Holds OMB's 2029 SALT tax expenditure (with the $40,000 cap), growing with GDP"
+        }
+      ],
+      "source": {
+        "name": "Computed from OMB, Analytical Perspectives FY2027, Table 10-1",
+        "url": "https://www.whitehouse.gov/omb/information-resources/budget/analytical-perspectives/"
+      }
+    },
+    {
+      "id": "ss_tax_end",
+      "group": "tax",
+      "name": "End income tax on Social Security benefits",
+      "phase": 0,
+      "desc": "Up to 85% of Social Security benefits are subject to income tax for people with higher incomes, and that revenue goes to the Social Security and Medicare trust funds. Ending it would speed up trust fund exhaustion (CRFB: Social Security about a year sooner, Medicare's hospital fund about six years sooner). The 2025 law's senior deduction only partly offsets the tax.",
+      "default": "mid",
+      "options": [
+        {
+          "key": "mid",
+          "label": "CBO data",
+          "kind": "window",
+          "S": -1600,
+          "from": 2026,
+          "to": 2035,
+          "split": {
+            "spend": 0,
+            "rev": 1
+          },
+          "note": "CRFB using CBO data: $1.6 trillion over 2026\u20132035"
+        },
+        {
+          "key": "high",
+          "label": "Trustees data",
+          "kind": "window",
+          "S": -1800,
+          "from": 2026,
+          "to": 2035,
+          "split": {
+            "spend": 0,
+            "rev": 1
+          },
+          "note": "CRFB using Social Security Trustees data: $1.8 trillion"
+        }
+      ],
+      "source": {
+        "name": "Committee for a Responsible Federal Budget, Donald Trump's Suggestion to End Taxation of Social Security Benefits",
+        "url": "https://www.crfb.org/blogs/donald-trumps-suggestion-end-taxation-social-security-benefits"
+      }
+    },
+    {
+      "id": "tariff_rebate",
+      "group": "tax",
+      "name": "$2,000 tariff rebate checks",
+      "phase": 0,
+      "desc": "Payments of $2,000 per person, proposed in 2025 as a 'tariff dividend,' structured like the 2020 COVID relief checks (phasing out above $75,000 of income, $150,000 for couples). Tariff revenue is already counted in the budget, so the checks add to deficits. Like the 2020 checks, they're counted as spending.",
+      "default": "once",
+      "options": [
+        {
+          "key": "once",
+          "label": "One round (2027)",
+          "kind": "once",
+          "amt": 600,
+          "note": "CRFB: about $600 billion per round",
+          "split": {
+            "spend": 1,
+            "rev": 0
+          }
+        },
+        {
+          "key": "annual",
+          "label": "Every year",
+          "kind": "annual",
+          "amt": 600,
+          "year": 2026,
+          "note": "CRFB: about $600 billion a year, roughly $6 trillion over 10 years",
+          "split": {
+            "spend": 1,
+            "rev": 0
+          }
+        }
+      ],
+      "source": {
+        "name": "Committee for a Responsible Federal Budget estimate, as reported by USA Today (Nov 2025)",
+        "url": "https://www.aol.com/articles/trumps-2-000-rebate-checks-231840506.html"
+      }
+    }
+  ]
+}

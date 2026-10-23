@@ -41,7 +41,7 @@
       <div class="meter">
         <div class="bar rev" title="Revenue"><span id="bar-rev"></span></div>
         <div class="bar out" id="bar-out" title="Spending">
-          <span class="seg M" data-seg="M"></span><span class="seg I" data-seg="I"></span><span class="seg DD" data-seg="DD"></span><span class="seg ND" data-seg="ND"></span>
+          <span class="seg M" data-seg="M"></span><span class="seg I" data-seg="I"></span><span class="seg DD" data-seg="DD"></span><span class="seg ND" data-seg="ND"></span><span class="seg NEW" data-seg="NEW"></span>
           <i id="bar-out-base" title="Baseline spending"></i>
         </div>
         <div class="seg-legend" id="seg-legend">
@@ -49,6 +49,7 @@
           <span data-leg="I"><i class="sw I"></i>Net interest <b></b></span>
           <span data-leg="DD"><i class="sw DD"></i>Defense <b></b></span>
           <span data-leg="ND"><i class="sw ND"></i>Nondefense <b></b></span>
+          <span data-leg="NEW" hidden><i class="sw NEW"></i>New programs <b></b></span>
         </div>
       </div>
     </div>
@@ -62,6 +63,7 @@
       <nav class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="spending">Spending</button>
         <button role="tab" aria-selected="false" data-tab="revenue">Revenue</button>
+        <button role="tab" aria-selected="false" data-tab="proposals">Proposals</button>
         <button role="tab" aria-selected="false" data-tab="changes">Your changes <span class="count" id="chg-count" hidden></span></button>
         <button role="tab" aria-selected="false" data-tab="projections">Projections</button>
       </nav>
@@ -97,6 +99,10 @@
 
     <section data-panel="revenue" hidden>
       <div id="revenue"></div>
+    </section>
+
+    <section data-panel="proposals" hidden>
+      <div id="proposals"></div>
     </section>
 
     <section data-panel="changes" hidden>

@@ -2,6 +2,7 @@ import { project, summarize } from "./projection.js?v=dev";
 import { lineChart, stackChart } from "./charts.js?v=dev";
 import { fmt } from "./model.js?v=dev";
 import { revenueScores } from "./revenue-ui.js?v=dev";
+import { proposalScores } from "./proposals-ui.js?v=dev";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -19,6 +20,7 @@ const MIX = [
   ["othm", "Other mandatory", "--mix-4"],
   ["disc", "Discretionary", "--mix-5"],
   ["netint", "Net interest", "--mix-6"],
+  ["newp", "New programs", "--mix-7"],
 ];
 
 let P, model, state = { units: "usd", h: 30 }, last, GDP, onPlanChange;
@@ -79,7 +81,9 @@ export function render() {
   document.querySelectorAll("#proj-units button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.units === state.units));
   document.querySelectorAll("#proj-horizon button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.h === state.h));
 
-  const res = project(P, { deltas: model.yearDeltas(), rev: revenueScores().total, assume: model.assume });
+  const ps = proposalScores();
+  const rv = revenueScores().total.map((v, i) => v + (ps ? ps.rev[i] : 0));
+  const res = project(P, { deltas: model.yearDeltas(), rev: rv, newSpend: ps?.spend, assume: model.assume });
   GDP = res.gdp;
   syncAssumptions();
   const sum = summarize(P, res);
@@ -121,11 +125,13 @@ export function render() {
   });
   const leg = $("#mix-legend");
   leg.textContent = "";
-  for (const [, name, v] of MIX) { const s = el("span"); const sw = el("i", "sq"); sw.style.background = css(v); s.append(sw, name); leg.append(s); }
+  const hasNew = res.mine.mix.newp.some((x) => Math.abs(x) > 0.05);
+  const mixShown = MIX.filter(([k]) => k !== "newp" || hasNew);
+  for (const [, name, v] of mixShown) { const s = el("span"); const sw = el("i", "sq"); sw.style.background = css(v); s.append(sw, name); leg.append(s); }
   const rl = el("span"); rl.append(el("i", "ln rev"), "Revenue"); leg.append(rl);
   stackChart($("#ch-mix"), {
     years: yrs, fmt: fmtU, fmtTick, label: `Spending by category under your plan, ${unitWord}`,
-    layers: MIX.map(([k, name, v]) => ({ name, short: name.replace(" & other health", "+"), values: cut(res.mine.mix[k]), color: css(v) })),
+    layers: mixShown.map(([k, name, v]) => ({ name, short: name.replace(" & other health", "+"), values: cut(res.mine.mix[k]), color: css(v) })),
     line: { name: "Revenue", values: cut(res.mine.rev), color: css("--ink") },
   });
   demoChart();
@@ -135,7 +141,7 @@ export function render() {
 function headline(res, sum) {
   const b = sum.base, m = sum.mine;
   const Y = res.years, L = Y[Y.length - 1];
-  const changed = res.userSpend.some((v) => Math.abs(v) > 0.05) || model.rev.size > 0;
+  const changed = res.userSpend.some((v) => Math.abs(v) > 0.05) || model.rev.size > 0 || model.prop.size > 0;
   const today = (P.base.debt[Y.indexOf(P.planStart) - 1] / GDP[Y.indexOf(P.planStart) - 1]) * 100;
   const box = $("#proj-headline");
   box.textContent = "";
@@ -147,7 +153,7 @@ function headline(res, sum) {
   if (!changed) {
     add(`Under the President's budget, ${model.assume.fc === "omb" ? "with OMB's economic forecast" : "as estimated by CBO"}, debt held by the public grows from ${Math.round(today)}% of GDP today to `);
     add(`${Math.round(b.d30.pct)}% in ${L}`, "add");
-    add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending and Revenue tabs to see how your plan compares.`);
+    add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending, Revenue, and Proposals tabs to see how your plan compares.`);
     return;
   }
   const cut10 = b.cum10 - m.cum10;

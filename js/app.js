@@ -2,6 +2,8 @@ import { BudgetModel, fmt, fmtPct } from "./model.js?v=dev";
 import { initProjections, render as renderProjections } from "./projections-ui.js?v=dev";
 import { makeCtx, scoreAll, addLevers, taxBreakLevers, taxCurveLever } from "./levers.js?v=dev";
 import { initRevenue, renderRevenue, updateRevenue, revenueChanges, PHASES } from "./revenue-ui.js?v=dev";
+import { initProposals, scoreProposals } from "./proposals.js?v=dev";
+import { initProposalsUI, renderProposals, updateProposals, proposalChanges } from "./proposals-ui.js?v=dev";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -25,13 +27,15 @@ const LOCK_TEXT = {
 };
 
 async function init() {
-  const [data, desc, proj, breaks, tcData] = await Promise.all([
+  const [data, desc, proj, breaks, tcData, props] = await Promise.all([
     fetch("data/budget.json?v=dev").then((r) => r.json()),
     fetch("data/descriptions.json?v=dev").then((r) => r.json()).catch(() => null),
     fetch("data/projections.json?v=dev").then((r) => r.json()).catch(() => null),
     fetch("data/tax_breaks.json?v=dev").then((r) => r.json()).catch(() => null),
     fetch("data/taxcurve.json?v=dev").then((r) => r.json()).catch(() => null),
+    fetch("data/proposals.json?v=dev").then((r) => r.json()).catch(() => null),
   ]);
+  if (props) initProposals(props, breaks);
   if (tcData) addLevers([taxCurveLever(tcData)], { front: true });
   if (breaks) addLevers(taxBreakLevers(breaks));
   model = new BudgetModel(data, desc);
@@ -40,6 +44,8 @@ async function init() {
     const fi = ctx.Y.indexOf(model.fy);
     model.revScore = () => scoreAll(ctx, model).total[fi] * 1000;
     initRevenue(model, ctx, { changed: () => { refresh(); commit(); }, drawer: openDrawerShell });
+    initProposalsUI(model, ctx, { changed: () => { refresh(); commit(); }, openDrawer: openDrawerShell });
+    model.propScore = () => { const sc = scoreProposals(ctx, model); return { spend: sc.spend[fi] * 1000, rev: sc.rev[fi] * 1000 }; };
     initProjections(proj, model, () => { refresh(); commit(); });
   }
   else $("[data-panel=projections]").prepend(Object.assign(document.createElement("p"), { className: "note", textContent: "Projection data couldn't be loaded." }));
@@ -54,7 +60,7 @@ async function init() {
   $("#phase-global").value = String(model.phase);
 
   renderTree();
-  if (proj) renderRevenue();
+  if (proj) { renderRevenue(); renderProposals(); }
   refresh();
   wire();
 }
@@ -255,6 +261,7 @@ function refresh() {
   if (!$("[data-panel=changes]").hidden) renderChanges();
   if (!$("[data-panel=projections]").hidden) scheduleProjections();
   if (!$("[data-panel=revenue]").hidden) updateRevenue();
+  if (!$("[data-panel=proposals]").hidden) updateProposals();
   updateChangeCount();
   $("#start-over").disabled = model.isDefault();
 }
@@ -303,8 +310,9 @@ function renderScore() {
   const max = Math.max(R, O, O0);
   $("#bar-rev").style.width = (R / max) * 100 + "%";
   const seg = model.seg.eff;
-  const segTotal = seg.M + seg.I + seg.DD + seg.ND;
-  for (const k of ["M", "I", "DD", "ND"]) {
+  const segTotal = seg.M + seg.I + seg.DD + seg.ND + seg.NEW;
+  $('#seg-legend [data-leg=NEW]').hidden = seg.NEW < 0.5;
+  for (const k of ["M", "I", "DD", "ND", "NEW"]) {
     const w = Math.max(0, seg[k]) / max * 100;
     $(`#bar-out [data-seg=${k}]`).style.width = w + "%";
     const pct = (seg[k] / segTotal) * 100;
@@ -314,7 +322,8 @@ function renderScore() {
   const lockedM = !model.mandatoryUnlocked;
   $("#bar-out").classList.toggle("m-locked", lockedM);
   $("#seg-legend").classList.toggle("m-locked", lockedM);
-  const lockedShare = Math.round(((lockedM ? seg.M : 0) + seg.I) / segTotal * 100);
+  // Locked share of existing spending (new programs from the Proposals tab aren't part of it).
+  const lockedShare = Math.round(((lockedM ? seg.M : 0) + seg.I) / (segTotal - seg.NEW) * 100);
 
   // Status line under the scoreboard. It is always present (no layout jump); only its message changes.
   let mTotal = 0;
@@ -342,7 +351,7 @@ function renderScore() {
 
 // ---------- changes ----------
 function updateChangeCount() {
-  const n = model.changes.size + model.rev.size;
+  const n = model.changes.size + model.rev.size + model.prop.size;
   const c = $("#chg-count");
   c.hidden = n === 0;
   c.textContent = n;
@@ -355,8 +364,9 @@ function renderChanges() {
     .filter(([, c]) => Math.abs(c.delta) > 0.05 || c.leaves)
     .map(([id, c]) => ({ n: model.nodes.get(id), s: model.settings.get(id), c }));
   const rev = revenueChanges();
-  if (!entries.length && !rev.length) {
-    box.append(el("p", "empty", "No changes yet. Use the sliders on the Spending tab (move a whole category, or open it up and adjust individual programs) or the levers on the Revenue tab."));
+  const props = proposalChanges();
+  if (!entries.length && !rev.length && !props.length) {
+    box.append(el("p", "empty", "No changes yet. Use the sliders on the Spending tab (move a whole category, or open it up and adjust individual programs), the levers on the Revenue tab, or switch on proposals on the Proposals tab."));
     return;
   }
   let cuts = 0, adds = 0, mand = 0;
@@ -365,18 +375,40 @@ function renderChanges() {
     mand += e.c.deltaM;
   }
   const revFY = rev.reduce((s2, r) => s2 + r.fy, 0) * 1000;
-  const net = -(cuts + adds) + revFY; // positive = deficit reduction
+  const propFY = props.reduce((s2, r) => s2 + r.fy, 0) * 1000;
+  const net = -(cuts + adds) + revFY - propFY; // positive = deficit reduction
   const sum = el("div", "chg-sum");
   sum.append(
     stat("Spending cuts", fmt(cuts), "cut"),
     stat("Spending increases", fmt(adds, { sign: true }), "add"),
     stat("Revenue changes", fmt(revFY, { sign: true }), revFY >= 0 ? "cut" : "add"),
+    ...(props.length ? [stat("Proposals", fmt(propFY, { sign: true }), propFY > 0 ? "add" : "cut")] : []),
     net >= 0 ? stat(`Deficit reduction, FY${model.fy}`, fmt(net), "cut") : stat(`Deficit increase, FY${model.fy}`, fmt(-net), "add"),
   );
   if (model.phase) sum.append(stat("Phase-in", `${model.phase} years`, ""));
   if (Math.abs(mand) > 0.05) sum.append(stat("…of which mandatory", fmt(mand, { sign: true }), "warn"));
   box.append(sum);
 
+  if (props.length) {
+    const sec = el("div", "chg-group");
+    sec.append(el("h3", "", "Proposals"));
+    props.sort((a, b) => b.ten - a.ten);
+    for (const r of props) {
+      const row = el("div", "chg-row");
+      const left = el("div", "chg-name");
+      const btn = el("button", "linklike", r.p.name);
+      btn.addEventListener("click", () => { selectTab("proposals"); document.querySelector(`.prop[data-id="${r.p.id}"]`)?.scrollIntoView({ block: "center" }); });
+      left.append(btn, el("div", "path", `10 years: ${fmt(r.ten * 1000, { sign: true })}`));
+      const mid = el("div", "chg-what", r.what);
+      const right = el("div", "chg-amt " + (r.fy > 0 ? "add" : "cut"), fmt(r.fy * 1000, { sign: true }));
+      const undo = el("button", "reset", "↺");
+      undo.title = "Remove this proposal";
+      undo.addEventListener("click", () => { model.setProp(r.p.id, null); renderProposals(); refresh(); commit(); });
+      row.append(left, mid, right, undo);
+      sec.append(row);
+    }
+    box.append(sec);
+  }
   if (rev.length) {
     const sec = el("div", "chg-group");
     sec.append(el("h3", "", "Revenue changes"));
@@ -471,7 +503,7 @@ function openDrawerShell({ path, title, desc, muted = false, facts = [], links =
   if (phase) {
     sel.textContent = "";
     const def = PHASES.find(([n]) => n === model.phase)[1].toLowerCase();
-    const o0 = el("option", "", `Plan default (${def})`); o0.value = ""; sel.append(o0);
+    const o0 = el("option", "", phase.defaultLabel || `Plan default (${def})`); o0.value = ""; sel.append(o0);
     for (const [n, label] of PHASES) { const o = el("option", "", label); o.value = String(n); sel.append(o); }
     sel.value = phase.value == null ? "" : String(phase.value);
   }
@@ -556,6 +588,7 @@ function selectTab(name) {
   if (name === "changes") renderChanges();
   if (name === "projections") renderProjections();
   if (name === "revenue") updateRevenue();
+  if (name === "proposals") updateProposals();
 }
 
 function toast(msg, { undo = false, ms = 2400 } = {}) {
@@ -583,6 +616,7 @@ function startOver() {
 function rebuildViews() {
   if ($("#search").value.trim().length >= 2) onSearch(); else renderTree();
   if ($("#revenue").childElementCount) renderRevenue();
+  if ($("#proposals").childElementCount) renderProposals();
   refresh();
   commit();
 }

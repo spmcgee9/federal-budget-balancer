@@ -53,6 +53,9 @@ export function project(P, plan = {}) {
     }
   }
   const userRev = plan.rev || new Array(n).fill(0);
+  // New programs from the Proposals tab (spending, billions).
+  const newSpend = plan.newSpend || new Array(n).fill(0);
+  for (let i = 0; i < n; i++) userSpend[i] += newSpend[i];
 
   // ---- economic assumptions (Phase 5) ----
   // A = { fc: "cbo"|"omb", dg: real growth change (pts/yr), dr: interest-rate change (pts), fb: debt feedback on/off }
@@ -121,6 +124,7 @@ export function project(P, plan = {}) {
     health: b.health.map((v, i) => (v + (byCat.health?.[i] || 0)) * gm(i)),
     othm: b.othm.map((v, i) => (v + P.pb.mand[i] + (byCat.othm?.[i] || 0)) * gm(i)),
     disc: catPath.disc.map((v, i) => v + (byCat.disc?.[i] || 0)),
+    newp: newSpend.slice(),
     netint: mine.netint,
   };
   return { years: Y, base, mine, userSpend, gdp };
