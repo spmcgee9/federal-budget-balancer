@@ -1,5 +1,7 @@
 import { BudgetModel, fmt, fmtPct } from "./model.js";
 import { initProjections, render as renderProjections } from "./projections-ui.js";
+import { makeCtx, scoreAll } from "./levers.js";
+import { initRevenue, renderRevenue, updateRevenue, revenueChanges, PHASES } from "./revenue-ui.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -29,7 +31,13 @@ async function init() {
     fetch("data/projections.json").then((r) => r.json()).catch(() => null),
   ]);
   model = new BudgetModel(data, desc);
-  if (proj) initProjections(proj, model);
+  if (proj) {
+    const ctx = makeCtx(proj, model.fy);
+    const fi = ctx.Y.indexOf(model.fy);
+    model.revScore = () => scoreAll(ctx, model).total[fi] * 1000;
+    initRevenue(model, ctx, { changed: () => { refresh(); commit(); }, drawer: openDrawerShell });
+    initProjections(proj, model);
+  }
   else $("[data-panel=projections]").prepend(Object.assign(document.createElement("p"), { className: "note", textContent: "Projection data couldn't be loaded." }));
   document.querySelectorAll("[data-fy]").forEach((e) => (e.textContent = "FY" + model.fy));
   document.querySelectorAll("[data-fy-num]").forEach((e) => (e.textContent = model.fy));
@@ -37,10 +45,12 @@ async function init() {
   $("#gen").textContent = `Data built ${model.meta.generated}.`;
 
   if (location.hash.length > 1) model.decode(decodeURIComponent(location.hash.slice(1)));
+  model.recompute();
   $("#mand-toggle").checked = model.mandatoryUnlocked;
+  $("#phase-global").value = String(model.phase);
 
   renderTree();
-  renderRevenue();
+  if (proj) renderRevenue();
   refresh();
   wire();
 }
@@ -179,6 +189,11 @@ function updateRow(row, n) {
     p.tags.append(el("span", "share", `${sh < 1 ? sh.toFixed(1) : Math.round(sh)}% of spending`));
   }
   if (n.mChanged > 0) p.tags.append(el("span", "chip warn", "⚠ Mandatory changed"));
+  const own = model.settings.get(n.id);
+  if (own && changed) {
+    const N = model.phaseOf(own);
+    if (N) p.tags.append(el("span", "chip phase", `phasing in over ${N} yrs`));
+  }
   if (!n.leaf && st.editable && n.baseM > 0.5 && !model.mandatoryUnlocked) {
     p.tags.append(el("span", "scope", `controls apply to ${fmt(n.adjBase)} discretionary`));
   }
@@ -235,8 +250,9 @@ function refresh() {
   renderScore();
   if (!$("[data-panel=changes]").hidden) renderChanges();
   if (!$("[data-panel=projections]").hidden) scheduleProjections();
+  if (!$("[data-panel=revenue]").hidden) updateRevenue();
   updateChangeCount();
-  $("#start-over").disabled = !model.settings.size && !model.mandatoryUnlocked;
+  $("#start-over").disabled = model.isDefault();
 }
 
 let projTimer;
@@ -250,7 +266,7 @@ function commit() {
   clearTimeout(commitTimer);
   commitTimer = setTimeout(() => {
     const s = model.encode();
-    const h = s === "v1;m0" ? "" : "#" + s;
+    const h = model.isDefault() ? "" : "#" + s;
     history.replaceState(null, "", location.pathname + location.search + h);
   }, 250);
 }
@@ -322,7 +338,7 @@ function renderScore() {
 
 // ---------- changes ----------
 function updateChangeCount() {
-  const n = model.changes.size;
+  const n = model.changes.size + model.rev.size;
   const c = $("#chg-count");
   c.hidden = n === 0;
   c.textContent = n;
@@ -334,8 +350,9 @@ function renderChanges() {
   const entries = [...model.changes.entries()]
     .filter(([, c]) => Math.abs(c.delta) > 0.05 || c.leaves)
     .map(([id, c]) => ({ n: model.nodes.get(id), s: model.settings.get(id), c }));
-  if (!entries.length) {
-    box.append(el("p", "empty", "No changes yet. Use the sliders on the Spending tab: move a whole category, or open it up and adjust individual programs."));
+  const rev = revenueChanges();
+  if (!entries.length && !rev.length) {
+    box.append(el("p", "empty", "No changes yet. Use the sliders on the Spending tab (move a whole category, or open it up and adjust individual programs) or the levers on the Revenue tab."));
     return;
   }
   let cuts = 0, adds = 0, mand = 0;
@@ -343,17 +360,39 @@ function renderChanges() {
     if (e.c.delta < 0) cuts += e.c.delta; else adds += e.c.delta;
     mand += e.c.deltaM;
   }
+  const revFY = rev.reduce((s2, r) => s2 + r.fy, 0) * 1000;
+  const net = -(cuts + adds) + revFY; // positive = deficit reduction
   const sum = el("div", "chg-sum");
   sum.append(
     stat("Spending cuts", fmt(cuts), "cut"),
     stat("Spending increases", fmt(adds, { sign: true }), "add"),
-    cuts + adds <= 0
-      ? stat("Deficit reduction", fmt(-(cuts + adds)), "cut")
-      : stat("Deficit increase", fmt(cuts + adds), "add"),
+    stat("Revenue changes", fmt(revFY, { sign: true }), revFY >= 0 ? "cut" : "add"),
+    net >= 0 ? stat(`Deficit reduction, FY${model.fy}`, fmt(net), "cut") : stat(`Deficit increase, FY${model.fy}`, fmt(-net), "add"),
   );
+  if (model.phase) sum.append(stat("Phase-in", `${model.phase} years`, ""));
   if (Math.abs(mand) > 0.05) sum.append(stat("…of which mandatory", fmt(mand, { sign: true }), "warn"));
   box.append(sum);
 
+  if (rev.length) {
+    const sec = el("div", "chg-group");
+    sec.append(el("h3", "", "Revenue changes"));
+    rev.sort((a, b) => b.ten - a.ten);
+    for (const r of rev) {
+      const row = el("div", "chg-row");
+      const left = el("div", "chg-name");
+      const btn = el("button", "linklike", r.L.name);
+      btn.addEventListener("click", () => { selectTab("revenue"); document.querySelector(`.lever[data-id="${r.L.id}"]`)?.scrollIntoView({ block: "center" }); });
+      left.append(btn, el("div", "path", `10 years: ${fmt(r.ten * 1000, { sign: true })}`));
+      const mid = el("div", "chg-what", r.what + (r.ph ? ` · ${r.ph}-yr phase-in` : ""));
+      const right = el("div", "chg-amt " + (r.fy >= 0 ? "cut" : "add"), fmt(r.fy * 1000, { sign: true }));
+      const undo = el("button", "reset", "↺");
+      undo.title = "Undo this change";
+      undo.addEventListener("click", () => { model.setRev(r.L.id, r.L.control.def, r.L.control.def); renderRevenue(); refresh(); commit(); });
+      row.append(left, mid, right, undo);
+      sec.append(row);
+    }
+    box.append(sec);
+  }
   const groups = [
     ["Mandatory program changes", entries.filter((e) => Math.abs(e.c.deltaM) > 0.05), true],
     ["Discretionary changes", entries.filter((e) => Math.abs(e.c.deltaM) <= 0.05), false],
@@ -370,7 +409,8 @@ function renderChanges() {
       left.append(el("button", "linklike", n.name));
       left.firstChild.addEventListener("click", () => revealInTree(n));
       left.append(el("div", "path", model.path(n).join(" › ") || "Budget function"));
-      const what = s.on ? `${fmtPct(s.pct)}` : "Turned off";
+      const N = model.phaseOf(s);
+      const what = (s.on ? `${fmtPct(s.pct)}` : "Turned off") + (N ? ` · ${N}-yr phase-in` : "");
       const mid = el("div", "chg-what", what + (c.leaves > 1 ? ` · ${c.leaves} accounts` : ""));
       const right = el("div", "chg-amt " + (c.delta < 0 ? "cut" : "add"), fmt(c.delta, { sign: true }));
       const undo = el("button", "reset", "↺");
@@ -405,65 +445,69 @@ function revealInTree(n) {
   }
 }
 
-// ---------- revenue ----------
-function renderRevenue() {
-  const box = $("#revenue");
-  box.textContent = "";
-  const bi = model.bi;
-  const max = Math.max(...model.receipts.map((r) => r.v[bi]));
-  for (const r of model.receipts) {
-    const row = el("div", "rev-row");
-    row.append(el("span", "rev-name", r.name), el("span", "rev-amt", fmt(r.v[bi])));
-    const bar = el("div", "rev-bar");
-    const fill = el("span");
-    fill.style.width = Math.max(0, (r.v[bi] / max) * 100) + "%";
-    bar.append(fill);
-    row.append(bar);
-    box.append(row);
-  }
-  const tot = el("div", "rev-row total");
-  tot.append(el("span", "rev-name", "Total revenue"), el("span", "rev-amt", fmt(model.totalReceipts)));
-  box.append(tot);
-}
-
 // ---------- drawer ----------
-function openDrawer(n) {
-  $("#drawer-path").textContent = model.path(n).join(" › ") || "Budget function";
-  $("#drawer-title").textContent = n.name;
-  const desc = model.description(n);
-  $("#drawer-desc").textContent = desc || fallbackDesc(n);
-  $("#drawer-desc").classList.toggle("muted", !desc);
-  const facts = $("#drawer-facts");
-  facts.textContent = "";
-  const add = (k, v) => { if (v) facts.append(el("dt", "", k), el("dd", "", v)); };
-  add(`FY${model.fy} request`, fmt(n.base));
-  if (Math.abs(n.eff - n.base) > 0.05) add("Your plan", `${fmt(n.eff)} (${fmt(n.eff - n.base, { sign: true })})`);
-  const kind = model.kind(n);
-  add("Type", !n.leaf && n.baseD > 0.5 && n.baseM > 0.5 ? `Mixed: ${fmt(n.baseD)} discretionary, ${fmt(n.baseM)} mandatory` : KIND_LABEL[kind] === "Locked" ? "Locked (interest, transfer, or offsetting receipt)" : KIND_LABEL[kind]);
-  if (n.leaf) {
-    add("Agency", n.agency);
-    if (n.bureau && n.bureau !== n.agency) add("Bureau", n.bureau);
-    if (n.off) add("Budget status", "Off-budget (counted in the total deficit)");
-    const lockR = model.lockReason(n);
-    if (lockR) add("Why locked", LOCK_TEXT[lockR]);
-  } else {
-    add("Contains", `${n.nLeaves} budget account${n.nLeaves === 1 ? "" : "s"}`);
+// Generic drawer: used by spending rows and revenue levers.
+let drawerPhaseSet = null;
+function openDrawerShell({ path, title, desc, muted = false, facts = [], links = [], phase = null }) {
+  $("#drawer-path").textContent = path;
+  $("#drawer-title").textContent = title;
+  $("#drawer-desc").textContent = desc;
+  $("#drawer-desc").classList.toggle("muted", muted);
+  const fx = $("#drawer-facts");
+  fx.textContent = "";
+  for (const [k, v] of facts) if (v) fx.append(el("dt", "", k), el("dd", "", v));
+  const ln = $("#drawer-links");
+  ln.textContent = "";
+  for (const [href, text] of links) {
+    const a = el("a", "", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; ln.append(a);
   }
-  add("Share of all spending", ((n.base / model.totalOutlays) * 100).toFixed(n.base / model.totalOutlays < 0.01 ? 2 : 1) + "%");
-  const links = $("#drawer-links");
-  links.textContent = "";
-  if (n.leaf && n.tac && /^\d{3}$/.test(n.tac) && n.acct) {
-    const a = el("a", "", "Spending details on USAspending.gov ↗");
-    a.href = `https://www.usaspending.gov/federal_account/${n.tac}-${n.acct.slice(-4)}`;
-    a.target = "_blank"; a.rel = "noopener";
-    links.append(a);
+  const ph = $("#drawer-phase"), sel = $("#drawer-phase-sel");
+  ph.hidden = !phase;
+  drawerPhaseSet = phase ? phase.set : null;
+  if (phase) {
+    sel.textContent = "";
+    const def = PHASES.find(([n]) => n === model.phase)[1].toLowerCase();
+    const o0 = el("option", "", `Plan default (${def})`); o0.value = ""; sel.append(o0);
+    for (const [n, label] of PHASES) { const o = el("option", "", label); o.value = String(n); sel.append(o); }
+    sel.value = phase.value == null ? "" : String(phase.value);
   }
-  const src = el("a", "", "Source data (OMB) ↗");
-  src.href = model.meta.sourceUrls?.[0] || "#";
-  src.target = "_blank"; src.rel = "noopener";
-  links.append(src);
   $("#drawer").hidden = false;
   $("#drawer-close").focus();
+}
+
+function openDrawer(n) {
+  const desc = model.description(n);
+  const facts = [];
+  facts.push([`FY${model.fy} request`, fmt(n.base)]);
+  if (Math.abs(n.eff - n.base) > 0.05) facts.push([`Your plan, FY${model.fy}`, `${fmt(n.eff)} (${fmt(n.eff - n.base, { sign: true })})`]);
+  const kind = model.kind(n);
+  facts.push(["Type", !n.leaf && n.baseD > 0.5 && n.baseM > 0.5 ? `Mixed: ${fmt(n.baseD)} discretionary, ${fmt(n.baseM)} mandatory` : KIND_LABEL[kind] === "Locked" ? "Locked (interest, transfer, or offsetting receipt)" : KIND_LABEL[kind]]);
+  if (n.leaf) {
+    facts.push(["Agency", n.agency]);
+    if (n.bureau && n.bureau !== n.agency) facts.push(["Bureau", n.bureau]);
+    if (n.off) facts.push(["Budget status", "Off-budget (counted in the total deficit)"]);
+    const lockR = model.lockReason(n);
+    if (lockR) facts.push(["Why locked", LOCK_TEXT[lockR]]);
+  } else {
+    facts.push(["Contains", `${n.nLeaves} budget account${n.nLeaves === 1 ? "" : "s"}`]);
+  }
+  facts.push(["Share of all spending", ((n.base / model.totalOutlays) * 100).toFixed(n.base / model.totalOutlays < 0.01 ? 2 : 1) + "%"]);
+  const links = [];
+  if (n.leaf && n.tac && /^\d{3}$/.test(n.tac) && n.acct) links.push([`https://www.usaspending.gov/federal_account/${n.tac}-${n.acct.slice(-4)}`, "Spending details on USAspending.gov ↗"]);
+  links.push([model.meta.sourceUrls?.[0] || "#", "Source data (OMB) ↗"]);
+  const own = model.settings.get(n.id);
+  openDrawerShell({
+    path: model.path(n).join(" › ") || "Budget function",
+    title: n.name,
+    desc: desc || fallbackDesc(n),
+    muted: !desc,
+    facts,
+    links,
+    phase: own ? {
+      value: own.ph ?? null,
+      set: (v) => { model.setNode(n.id, { ph: v }); if (v == null) { const s2 = model.settings.get(n.id); if (s2) delete s2.ph; model.recompute(); } refresh(); commit(); },
+    } : null,
+  });
 }
 
 function fallbackDesc(n) {
@@ -507,6 +551,7 @@ function selectTab(name) {
   document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== name));
   if (name === "changes") renderChanges();
   if (name === "projections") renderProjections();
+  if (name === "revenue") updateRevenue();
 }
 
 function toast(msg, { undo = false, ms = 2400 } = {}) {
@@ -521,17 +566,19 @@ function toast(msg, { undo = false, ms = 2400 } = {}) {
 // Start over: back to the President's budget, with a few seconds to undo instead of a confirm dialog.
 let undoState = null;
 function startOver() {
-  if (!model.settings.size && !model.mandatoryUnlocked) return;
+  if (model.isDefault()) return;
   undoState = model.encode();
   model.resetAll();
   model.setMandatoryUnlocked(false);
   $("#mand-toggle").checked = false;
+  $("#phase-global").value = "0";
   rebuildViews();
   toast("Back to the President's budget.", { undo: true, ms: 7000 });
 }
 
 function rebuildViews() {
   if ($("#search").value.trim().length >= 2) onSearch(); else renderTree();
+  if ($("#revenue").childElementCount) renderRevenue();
   refresh();
   commit();
 }
@@ -544,6 +591,15 @@ function wire() {
     commit();
   });
   $("#search").addEventListener("input", onSearch);
+  $("#phase-global").addEventListener("change", (e) => {
+    model.setPhase(+e.target.value);
+    refresh();
+    commit();
+  });
+  $("#drawer-phase-sel").addEventListener("change", (e) => {
+    const v = e.target.value;
+    drawerPhaseSet?.(v === "" ? null : +v);
+  });
   $("#drawer-close").addEventListener("click", () => ($("#drawer").hidden = true));
   $("#drawer").addEventListener("click", (e) => { if (e.target.id === "drawer") $("#drawer").hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#drawer").hidden = true; });
@@ -553,6 +609,7 @@ function wire() {
     if (!undoState) return;
     model.decode(undoState);
     $("#mand-toggle").checked = model.mandatoryUnlocked;
+    $("#phase-global").value = String(model.phase);
     undoState = null;
     rebuildViews();
     $("#toast").hidden = true;
@@ -561,7 +618,7 @@ function wire() {
     commit();
     clearTimeout(commitTimer);
     const s = model.encode();
-    const url = location.origin + location.pathname + (s === "v1;m0" ? "" : "#" + s);
+    const url = location.origin + location.pathname + (model.isDefault() ? "" : "#" + s);
     history.replaceState(null, "", url);
     try { await navigator.clipboard.writeText(url); toast("Link copied. Anyone who opens it sees your plan."); }
     catch { prompt("Copy this link:", url); }

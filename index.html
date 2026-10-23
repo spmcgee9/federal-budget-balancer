@@ -65,6 +65,15 @@
         <button role="tab" aria-selected="false" data-tab="changes">Your changes <span class="count" id="chg-count" hidden></span></button>
         <button role="tab" aria-selected="false" data-tab="projections">Projections</button>
       </nav>
+      <label class="phase-ctl" title="How quickly your changes take full effect. You can override this for any single change in its 'What is this?' panel.">
+        <span>Phase in changes</span>
+        <select id="phase-global">
+          <option value="0">Immediately</option>
+          <option value="3">Over 3 years</option>
+          <option value="5">Over 5 years</option>
+          <option value="10">Over 10 years</option>
+        </select>
+      </label>
     </div>
 
     <section data-panel="spending">
@@ -87,7 +96,6 @@
     </section>
 
     <section data-panel="revenue" hidden>
-      <div class="note">Baseline revenue from the President's budget. Tax and tariff levers (rates, brackets, an editable income-tax curve, and tax breaks) arrive in a later phase.</div>
       <div id="revenue"></div>
     </section>
 
@@ -171,6 +179,10 @@
       <h2 id="drawer-title"></h2>
       <p id="drawer-desc"></p>
       <dl id="drawer-facts"></dl>
+      <div id="drawer-phase" class="drawer-phase" hidden>
+        <label for="drawer-phase-sel">Phase in this change</label>
+        <select id="drawer-phase-sel"></select>
+      </div>
       <p class="links" id="drawer-links"></p>
     </div>
   </aside>

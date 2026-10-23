@@ -39,7 +39,11 @@ export class BudgetModel {
     }
     // User state
     this.mandatoryUnlocked = false;
-    this.settings = new Map(); // nodeId -> {on:boolean, pct:number, m:boolean}
+    this.phase = 0;            // default phase-in years for every change (0 = immediately)
+    this.settings = new Map(); // nodeId -> {on:boolean, pct:number, m:boolean, ph?:years}
+    this.rev = new Map();      // revenue lever id -> value
+    this.revPh = new Map();    // revenue lever id -> phase-in years override
+    this.revScore = null;      // set by the app: () => FY budget-year revenue change (millions)
     this.recompute();
   }
 
@@ -83,12 +87,23 @@ export class BudgetModel {
     return null;
   }
 
-  leafValue(leaf, yi = this.bi) {
+  // Phase-in: share of a change in effect in a given fiscal year (0 before the budget year).
+  // N = 0 means immediately; otherwise the change grows evenly to full strength over N years.
+  ramp(N, year) {
+    if (year < this.fy) return 0;
+    return N ? Math.min(1, (year - this.fy + 1) / N) : 1;
+  }
+
+  phaseOf(s) { return s && s.ph != null ? s.ph : this.phase; }
+
+  leafValue(leaf, yi = this.bi, full = false) {
     const base = leaf.v[yi] || 0;
     const d = this.decidingSetting(leaf);
     if (!d) return base;
     const s = d[1];
-    return s.on ? base * (1 + s.pct / 100) : 0;
+    const year = this.meta.years[yi];
+    const f = full ? (year < this.fy ? 0 : 1) : this.ramp(this.phaseOf(s), year);
+    return s.on ? base * (1 + (s.pct / 100) * f) : base * (1 - f);
   }
 
   recompute() {
@@ -132,7 +147,8 @@ export class BudgetModel {
     this.totalOutlays = this.roots.reduce((s, r) => s + r.base, 0);
     this.planOutlays = this.roots.reduce((s, r) => s + r.eff, 0);
     this.totalReceipts = this.receipts.reduce((s, r) => s + (r.v[bi] || 0), 0);
-    this.planReceipts = this.totalReceipts; // revenue levers arrive in Phase 3
+    this.revDelta = this.revScore ? this.revScore() : 0;
+    this.planReceipts = this.totalReceipts + this.revDelta;
   }
 
   // Composition of a node: "D", "M", "X" (computed/offsets) or "mixed".
@@ -176,10 +192,12 @@ export class BudgetModel {
       pct: patch.pct !== undefined ? patch.pct : (prev ? prev.pct : (cur.on ? Math.round(cur.pct) : 0)),
       m: this.mandatoryUnlocked,
     };
+    if (patch.ph !== undefined) { if (patch.ph != null) s.ph = patch.ph; }
+    else if (prev && prev.ph != null) s.ph = prev.ph;
     if (patch.on === true && prev && !prev.on && patch.pct === undefined) s.pct = prev.pct;
     // Setting a node replaces anything set underneath it.
     if (n.children) this.#clearBelow(n);
-    if (s.on && Math.abs(s.pct) < 1e-9 && !n.parent) this.settings.delete(id);
+    if (s.on && Math.abs(s.pct) < 1e-9 && !n.parent && s.ph == null) this.settings.delete(id);
     else if (s.on && Math.abs(s.pct) < 1e-9 && !this.#ancestorSetting(n)) this.settings.delete(id);
     else this.settings.set(id, s);
     this.recompute();
@@ -206,8 +224,26 @@ export class BudgetModel {
 
   resetAll() {
     this.settings.clear();
+    this.rev.clear();
+    this.revPh.clear();
+    this.phase = 0;
     this.recompute();
   }
+
+  setPhase(n) { this.phase = n; this.recompute(); }
+
+  setRev(id, value, dflt) {
+    if (value === dflt || value == null) { this.rev.delete(id); this.revPh.delete(id); }
+    else this.rev.set(id, value);
+    this.recompute();
+  }
+
+  setRevPhase(id, n) {
+    if (n == null) this.revPh.delete(id); else this.revPh.set(id, n);
+    this.recompute();
+  }
+
+  hasChanges() { return this.settings.size > 0 || this.rev.size > 0; }
 
   setMandatoryUnlocked(v) {
     this.mandatoryUnlocked = v;
@@ -233,7 +269,9 @@ export class BudgetModel {
     return "othm";
   }
 
-  // Dollar change from the user's plan, by projection category and by OMB year (millions).
+  // Full-strength dollar change from the user's plan, by projection category, phase-in length,
+  // and OMB year (millions). The projection applies the phase-in itself, so that a 10-year
+  // phase-in keeps ramping after OMB's last year.
   yearDeltas() {
     const years = this.meta.years;
     const out = {};
@@ -242,10 +280,12 @@ export class BudgetModel {
       if (!d) continue;
       const c = this.projCat(leaf);
       if (!c) continue;
-      const row = out[c] || (out[c] = years.map(() => 0));
-      for (let i = 0; i < years.length; i++) row[i] += this.leafValue(leaf, i) - (leaf.v[i] || 0);
+      const N = this.phaseOf(d[1]);
+      const byN = out[c] || (out[c] = {});
+      const row = byN[N] || (byN[N] = years.map(() => 0));
+      for (let i = 0; i < years.length; i++) row[i] += this.leafValue(leaf, i, true) - (leaf.v[i] || 0);
     }
-    return { years, d: out };
+    return { years, d: out, fy: this.fy };
   }
 
   path(n) {
@@ -292,22 +332,43 @@ export class BudgetModel {
   // ---- shareable state ----
   encode() {
     const parts = ["v1", this.mandatoryUnlocked ? "m1" : "m0"];
+    if (this.phase) parts.push("ph" + this.phase);
     for (const [id, s] of this.settings) {
-      parts.push(`${id}:${s.on ? 1 : 0}:${+s.pct.toFixed(2)}${s.m ? ":m" : ""}`);
+      parts.push(`${id}:${s.on ? 1 : 0}:${+s.pct.toFixed(2)}${s.m ? ":m" : ":"}${s.ph != null ? ":" + s.ph : ""}`.replace(/:$/, ""));
+    }
+    for (const [id, v] of this.rev) {
+      const ph = this.revPh.get(id);
+      parts.push(`r.${id}=${typeof v === "number" ? +v.toFixed(4) : v}${ph != null ? "~" + ph : ""}`);
     }
     return parts.join(";");
   }
 
+  isDefault() { return this.encode() === "v1;m0"; }
+
   decode(str) {
     if (!str || !str.startsWith("v1")) return false;
     this.settings.clear();
+    this.rev.clear();
+    this.revPh.clear();
+    this.phase = 0;
     for (const p of str.split(";").slice(1)) {
       if (p === "m1") { this.mandatoryUnlocked = true; continue; }
       if (p === "m0") { this.mandatoryUnlocked = false; continue; }
-      const [id, on, pct, m] = p.split(":");
+      if (/^ph\d+$/.test(p)) { this.phase = +p.slice(2); continue; }
+      if (p.startsWith("r.")) {
+        const [kv, ph] = p.slice(2).split("~");
+        const [id, raw] = kv.split("=");
+        const num = Number(raw);
+        this.rev.set(id, raw === "true" ? true : raw === "false" ? false : Number.isFinite(num) && raw !== "" ? num : raw);
+        if (ph != null && ph !== "") this.revPh.set(id, +ph);
+        continue;
+      }
+      const [id, on, pct, m, ph] = p.split(":");
       if (!this.nodes.has(id)) continue; // ids from an older data year are skipped
       const v = Number(pct);
-      this.settings.set(id, { on: on === "1", pct: Number.isFinite(v) ? v : 0, m: m === "m" });
+      const s = { on: on === "1", pct: Number.isFinite(v) ? v : 0, m: m === "m" };
+      if (ph != null && ph !== "") s.ph = +ph;
+      this.settings.set(id, s);
     }
     this.recompute();
     return true;

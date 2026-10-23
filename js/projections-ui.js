@@ -1,6 +1,7 @@
 import { project, summarize } from "./projection.js";
 import { lineChart, stackChart } from "./charts.js";
 import { fmt } from "./model.js";
+import { revenueScores } from "./revenue-ui.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -72,7 +73,7 @@ export function render() {
   document.querySelectorAll("#proj-units button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.units === state.units));
   document.querySelectorAll("#proj-horizon button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.h === state.h));
 
-  const res = project(P, { deltas: model.yearDeltas() });
+  const res = project(P, { deltas: model.yearDeltas(), rev: revenueScores().total });
   const sum = summarize(P, res);
   last = { res, sum };
   const Y = res.years;
@@ -126,7 +127,7 @@ export function render() {
 function headline(res, sum) {
   const b = sum.base, m = sum.mine;
   const Y = res.years, L = Y[Y.length - 1];
-  const changed = res.userSpend.some((v) => Math.abs(v) > 0.05);
+  const changed = res.userSpend.some((v) => Math.abs(v) > 0.05) || model.rev.size > 0;
   const today = (P.base.debt[Y.indexOf(P.planStart) - 1] / P.gdp[Y.indexOf(P.planStart) - 1]) * 100;
   const box = $("#proj-headline");
   box.textContent = "";
@@ -134,7 +135,7 @@ function headline(res, sum) {
   if (!changed) {
     add(`Under the President's budget, as estimated by CBO, debt held by the public grows from ${Math.round(today)}% of GDP today to `);
     add(`${Math.round(b.d30.pct)}% in ${L}`, "add");
-    add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending tab to see how your plan compares.`);
+    add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending and Revenue tabs to see how your plan compares.`);
     return;
   }
   const cut10 = b.cum10 - m.cum10;

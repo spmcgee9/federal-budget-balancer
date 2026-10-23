@@ -29,20 +29,26 @@ export function project(P, plan = {}) {
   if (plan.deltas) {
     const oy = plan.deltas.years;
     const last = oy[oy.length - 1];
+    const li = Y.indexOf(last);
+    const fy = plan.deltas.fy || P.planStart;
+    const ramp = (N, y) => (y < fy ? 0 : N ? Math.min(1, (y - fy + 1) / N) : 1);
     for (const c of CATS) {
-      const row = plan.deltas.d[c];
       byCat[c] = new Array(n).fill(0);
-      if (!row) continue;
-      const lastVal = row[oy.length - 1] / 1000;
-      const li = Y.indexOf(last);
-      for (let i = 0; i < n; i++) {
-        const y = Y[i];
-        let v = 0;
-        if (y < P.planStart) v = 0;
-        else if (y <= last) v = row[oy.indexOf(y)] / 1000;
-        else v = catPath[c][li] ? lastVal * (catPath[c][i] / catPath[c][li]) : 0;
-        byCat[c][i] = v;
-        userSpend[i] += v;
+      const byN = plan.deltas.d[c];
+      if (!byN) continue;
+      for (const [Nk, row] of Object.entries(byN)) {
+        const N = +Nk;
+        const lastVal = row[oy.length - 1] / 1000; // full-strength change in OMB's last year
+        for (let i = 0; i < n; i++) {
+          const y = Y[i];
+          if (y < P.planStart) continue;
+          let full;
+          if (y <= last) full = row[oy.indexOf(y)] / 1000;
+          else full = catPath[c][li] ? lastVal * (catPath[c][i] / catPath[c][li]) : 0;
+          const v = full * ramp(N, y);
+          byCat[c][i] += v;
+          userSpend[i] += v;
+        }
       }
     }
   }
