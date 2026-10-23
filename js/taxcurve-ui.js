@@ -62,7 +62,7 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
   function draw() {
     chartBox.querySelector("svg")?.remove();
     const W = Math.max(300, chartBox.clientWidth || 700), H = W < 480 ? 260 : 300;
-    const m = { t: 14, r: 14, b: 30, l: 44 };
+    const m = { t: 18, r: 24, b: 30, l: 44 };
     const iw = W - m.l - m.r, ih = H - m.t - m.b;
     const maxR = Math.max(0.5, ...sched.map((p) => p.r + 0.08));
     const yMax = Math.ceil(maxR * 10) / 10;
@@ -79,10 +79,21 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
       svgEl("line", { x1: m.l, x2: m.l + iw, y1: y(r), y2: y(r), class: r === 0 ? "zero" : "grid" }, g);
       svgEl("text", { x: m.l - 6, y: y(r) + 4, "text-anchor": "end" }, g).textContent = Math.round(r * 100) + "%";
     }
+    // Dollar labels, skipping any that would touch the previous one (on phones that leaves $10K, $100K, $1M, $10M).
+    let lastRight = -Infinity;
+    const pri = TICKS.filter((t) => Math.abs(Math.log10(t) % 1) < 1e-9);
+    const labW = (t) => usd(t).length * 6.4;
+    const shown = [];
     for (const t of TICKS) {
-      if (W < 480 && [2.5e4, 2.5e5, 2.5e6].includes(t)) continue;
-      svgEl("text", { x: x(t), y: m.t + ih + 18, "text-anchor": "middle" }, g).textContent = usd(t);
+      const cx = Math.min(x(t), m.l + iw + m.r - labW(t) / 2), w = labW(t);
+      if (cx - w / 2 < lastRight + 6) {
+        // Prefer powers of ten: drop the previous label if it was a minor one and this one is major.
+        if (pri.includes(t) && shown.length && !pri.includes(shown[shown.length - 1].t)) shown.pop();
+        else continue;
+      }
+      shown.push({ t, cx }); lastRight = cx + w / 2;
     }
+    for (const { t, cx } of shown) svgEl("text", { x: cx, y: m.t + ih + 18, "text-anchor": "middle" }, g).textContent = usd(t);
     const stepPath = (s) => {
       let d = "";
       s.forEach((p, k) => {
@@ -103,6 +114,24 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
     svgEl("path", { d: stepPath(base), class: "curve-base" }, svg);
     svgEl("path", { d: avgPath(sched), class: "curve-avg" }, svg);
     svgEl("path", { d: stepPath(sched), class: "curve-line" }, svg);
+    // Rate labels above each bracket's handle, skipped where they would collide with one already placed.
+    // Each label tries above its handle, then to the left, then to the right; boxes are {x, y (top), w, h}.
+    const hxOf = (p, k) => (k === 0 ? x(XMIN) : x(p.t));
+    const boxes = sched.filter((p) => p.t <= XMAX).map((p, k) => ({ x: hxOf(p, k) - 8, y: y(p.r) - 8, w: 16, h: 16 }));
+    const hits = (b) => boxes.some((q) => b.x < q.x + q.w && q.x < b.x + b.w && b.y < q.y + q.h && q.y < b.y + b.h);
+    sched.forEach((p, k) => {
+      if (p.t > XMAX) return;
+      const hx = hxOf(p, k), hy = y(p.r), txt = pct(p.r), w = txt.length * 6.2 + 2, h = 12;
+      const clampX = (bx) => Math.min(Math.max(bx, m.l - 4), m.l + iw + m.r - w);
+      const cands = [
+        { x: clampX(hx - w / 2), y: hy - 9 - h }, { x: hx - 10 - w, y: hy - 18 }, { x: hx + 10, y: hy - 18 },
+        { x: clampX(hx - w / 2), y: hy + 9 },
+      ];
+      const b = cands.find((c) => c.x >= m.l - 4 && c.y >= 0 && !hits({ ...c, w, h }));
+      if (!b) return;
+      boxes.push({ ...b, w, h });
+      svgEl("text", { x: b.x + w / 2, y: b.y + h - 2, "text-anchor": "middle", class: "rate-label halo" }, svg).textContent = txt;
+    });
     // handles
     sched.forEach((p, k) => {
       const hx = k === 0 ? x(XMIN) : x(p.t);
@@ -214,7 +243,7 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
   function renderTable() {
     table.textContent = "";
     const head = el("tr");
-    for (const h of ["Rate", "Starts at (single)", "Married filing jointly", ""]) head.append(el("th", "", h));
+    for (const h of ["Rate", "Starts at (single)", "Married (joint)", ""]) head.append(el("th", "", h));
     table.append(head);
     sched.forEach((p, k) => {
       const tr = el("tr");
@@ -296,7 +325,7 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
     else renderEffect();
   };
   let w = 0;
-  new ResizeObserver(() => { const nw = chartBox.clientWidth; if (nw && Math.abs(nw - w) > 10) { w = nw; draw(); } }).observe(chartBox);
+  new ResizeObserver(() => { const nw = chartBox.clientWidth; if (nw && Math.abs(nw - w) > 10) { w = nw; requestAnimationFrame(draw); } }).observe(chartBox);
   requestAnimationFrame(refreshAll);
   return root;
 }

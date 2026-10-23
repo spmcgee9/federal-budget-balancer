@@ -51,7 +51,8 @@ export function initProjections(projData, budgetModel, changed) {
   let w = 0;
   new ResizeObserver(() => {
     const nw = $("[data-panel=projections]").clientWidth;
-    if (nw && Math.abs(nw - w) > 20) { w = nw; if (!$("[data-panel=projections]").hidden) render(); }
+    // Redraw on the next frame, not inside the observer callback (that would trigger a resize loop warning).
+    if (nw && Math.abs(nw - w) > 20) { w = nw; requestAnimationFrame(() => { if (!$("[data-panel=projections]").hidden) render(); }); }
   }).observe($("[data-panel=projections]"));
 }
 
@@ -75,6 +76,9 @@ function fmtTick(v) {
   const s = a === 0 ? "$0" : a >= 1000 ? "$" + +(a / 1000).toFixed(1) + "T" : "$" + Math.round(a) + "B";
   return (v < 0 ? "−" : "") + s;
 }
+
+// Chart end labels: the usual format, with a true minus sign.
+const fmtEnd = (v) => (v == null || !Number.isFinite(v) ? "" : fmtU(v).replace(/^-/, "−"));
 
 export function render() {
   if (!P || !model) return;
@@ -101,7 +105,7 @@ export function render() {
   const unitWord = state.units === "gdp" ? "percent of GDP" : state.units === "real" ? "FY2026 dollars" : "dollars";
   const refs = state.units === "gdp" ? [{ value: 106, label: "Post-WWII record (106%, 1946)" }] : [];
   lineChart($("#ch-debt"), {
-    years: yrs, fmt: fmtU, fmtTick, refs, zeroBase: true, label: `Debt held by the public, ${unitWord}`,
+    years: yrs, fmt: fmtU, fmtTick, fmtEnd, refs, zeroBase: true, label: `Debt held by the public, ${unitWord}`,
     series: [
       { name: "President's budget", short: "President", values: cut(res.base.debt), color: baseC, dash: true },
       { name: "Your plan", short: "Your plan", values: cut(res.mine.debt), color: planC, width: 2.5 },
@@ -109,7 +113,7 @@ export function render() {
   });
   const inC = css("--in"), outC = css("--out");
   lineChart($("#ch-def"), {
-    years: yrs, fmt: (v) => (v >= 0 ? "Surplus " : "Deficit ") + fmtU(Math.abs(v)), fmtTick,
+    years: yrs, fmt: (v) => (v >= 0 ? "Surplus " : "Deficit ") + fmtU(Math.abs(v)), fmtTick, fmtEnd,
     label: `Annual deficit or surplus, ${unitWord}`,
     series: [
       { name: "Your plan", values: cut(res.mine.deficit), type: "bar", color: outC, barColor: (v) => (v >= 0 ? inC : outC) },
@@ -117,7 +121,7 @@ export function render() {
     ],
   });
   lineChart($("#ch-int"), {
-    years: yrs, fmt: fmtU, fmtTick, zeroBase: true, label: `Net interest, ${unitWord}`,
+    years: yrs, fmt: fmtU, fmtTick, fmtEnd, zeroBase: true, label: `Net interest, ${unitWord}`,
     series: [
       { name: "President's budget", short: "President", values: cut(res.base.netint), color: baseC, dash: true },
       { name: "Your plan", short: "Your plan", values: cut(res.mine.netint), color: planC, width: 2.5 },
@@ -215,7 +219,7 @@ function demoChart() {
   const ratio = idx.map(([, i]) => (d.v[i][3] / (d.v[i][1] + d.v[i][2])) * 100);
   lineChart($("#ch-demo"), {
     years: idx.map(([y]) => y), height: 220, zeroBase: true, label: "People 65+ per 100 people aged 25 to 64",
-    fmt: (v) => v.toFixed(1) + " per 100", fmtTick: (v) => String(v),
+    fmt: (v) => v.toFixed(1) + " per 100", fmtTick: (v) => String(v), fmtEnd: (v) => v.toFixed(0),
     series: [{ name: "65+ per 100 aged 25–64", short: "65+ per 100", values: ratio, color: css("--plan"), width: 2.5 }],
   });
 }

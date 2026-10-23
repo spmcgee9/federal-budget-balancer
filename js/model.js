@@ -434,7 +434,8 @@ export function fmt(m, { sign = false, digits } = {}) {
   const neg = m < 0;
   const a = Math.abs(m);
   let s;
-  if (a >= 1e6) s = "$" + (a / 1e6).toFixed(digits ?? 2) + "T";
+  // About three significant figures: $8.09T, $56.3T, $155T.
+  if (a >= 1e6) s = "$" + (a / 1e6).toFixed(digits ?? (a >= 1e8 ? 0 : a >= 1e7 ? 1 : 2)) + "T";
   else if (a >= 1e3) s = "$" + (a / 1e3).toFixed(digits ?? (a >= 1e5 ? 0 : 1)) + "B";
   else if (a >= 1) s = "$" + a.toFixed(digits ?? 0) + "M";
   else if (a > 0) s = "$" + (a * 1000).toFixed(0) + "K";

@@ -7,6 +7,43 @@ const svgEl = (tag, attrs = {}, parent) => {
   return e;
 };
 
+// Text width in px for an 11px chart label (canvas measurement; no layout needed).
+let ctx2d;
+function textWidth(str, weight = 500, size = 11) {
+  ctx2d = ctx2d || document.createElement("canvas").getContext("2d");
+  const fam = getComputedStyle(document.body).fontFamily || "sans-serif";
+  ctx2d.font = `${weight} ${size}px ${fam}`;
+  return ctx2d.measureText(str).width;
+}
+
+// Spread labels vertically so none are closer than `gap`, staying within [lo, hi]
+// and as close as possible to where each wants to be.
+function spread(items, lo, hi, gap) {
+  const a = items.slice().sort((p, q) => p.want - q.want);
+  a.forEach((it, k) => (it.y = Math.max(it.want, k ? a[k - 1].y + gap : lo)));
+  for (let k = a.length - 1; k >= 0; k--) a[k].y = Math.min(a[k].y, k < a.length - 1 ? a[k + 1].y - gap : hi);
+  for (let k = 0; k < a.length; k++) a[k].y = Math.max(a[k].y, k ? a[k - 1].y + gap : lo);
+  return items;
+}
+
+// Right-hand labels: a short leader from the line end to "Name  value".
+function endLabels(f, items) {
+  const { svg, m, iw, ih } = f;
+  spread(items, m.t + 6, m.t + ih, 14);
+  const g = svgEl("g", { class: "end-labels" }, svg);
+  const x0 = m.l + iw;
+  for (const it of items) {
+    if (it.leader !== false) {
+      svgEl("path", { d: `M${x0 + 2},${it.want.toFixed(1)}L${x0 + 6},${it.want.toFixed(1)}L${x0 + 10},${it.y.toFixed(1)}`,
+        class: "leader", stroke: it.color }, g);
+    }
+    const t = svgEl("text", { x: x0 + 13, y: (it.y + 4).toFixed(1), class: "end-label" }, g);
+    const n = svgEl("tspan", {}, t); n.textContent = it.text;
+    if (it.value) { const v = svgEl("tspan", { class: "end-val", dx: 5 }, t); v.textContent = it.value; }
+  }
+}
+const endWidth = (items) => Math.max(0, ...items.map((it) => textWidth(it.text) + (it.value ? 5 + textWidth(it.value, 600) : 0)));
+
 function niceTicks(lo, hi, count = 5) {
   if (hi === lo) { hi = lo + 1; }
   const span = hi - lo;
@@ -21,21 +58,23 @@ function niceTicks(lo, hi, count = 5) {
   return ticks;
 }
 
-function frame(container, height) {
+function frame(container, height, rightLabelWidth = 0) {
   container.textContent = "";
   container.classList.add("chart");
   const W = Math.max(280, container.clientWidth || 600);
   const H = height;
-  const m = { t: 12, r: W < 480 ? 12 : 92, b: 26, l: W < 480 ? 46 : 58 };
+  const narrow = W < 480;
+  // Room on the right for the end labels (measured), plus half a year label so the last tick isn't cut off.
+  const m = { t: 12, r: narrow || !rightLabelWidth ? 16 : Math.min(200, Math.ceil(rightLabelWidth) + 18), b: 26, l: narrow ? 46 : 58 };
   const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", height: H, role: "img" }, container);
   const tip = document.createElement("div");
   tip.className = "chart-tip";
   tip.hidden = true;
   container.append(tip);
-  return { svg, tip, W, H, m, iw: W - m.l - m.r, ih: H - m.t - m.b, narrow: W < 480 };
+  return { svg, tip, W, H, m, iw: W - m.l - m.r, ih: H - m.t - m.b, narrow };
 }
 
-function axes(f, years, y, ticks, fmtTick) {
+function axes(f, years, y, ticks, fmtTick, band = false) {
   const { svg, m, iw, ih } = f;
   const g = svgEl("g", { class: "axis" }, svg);
   for (const t of ticks) {
@@ -47,7 +86,10 @@ function axes(f, years, y, ticks, fmtTick) {
   // Label every 1, 2, 5, 10... years so that labels stay ~48px+ apart.
   const maxLabels = Math.max(3, Math.floor(iw / 48));
   const step = [1, 2, 5, 10, 20].find((s) => years.length / s <= maxLabels) || 25;
-  const x = (i) => m.l + (years.length === 1 ? iw / 2 : (i / (years.length - 1)) * iw);
+  // With bars, each year gets a band and the bar sits in its middle, so the first and last bars stay inside the plot.
+  const n = years.length;
+  const x = band ? (i) => m.l + ((i + 0.5) / n) * iw : (i) => m.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw);
+  x.inv = band ? (px) => Math.floor(((px - m.l) / iw) * n) : (px) => Math.round(((px - m.l) / iw) * (n - 1));
   years.forEach((yr, i) => {
     const onStep = yr % step === 0;
     // The first year gets a label only if the next labeled year isn't too close.
@@ -72,7 +114,7 @@ function hover(f, years, x, rows) {
   const show = (evt) => {
     const rect = svg.getBoundingClientRect();
     const sx = (evt.clientX - rect.left) * (f.W / rect.width);
-    const i = Math.max(0, Math.min(years.length - 1, Math.round(((sx - m.l) / iw) * (years.length - 1))));
+    const i = Math.max(0, Math.min(years.length - 1, x.inv(sx)));
     const xx = x(i);
     cross.setAttribute("x1", xx); cross.setAttribute("x2", xx); cross.style.display = "";
     rows.forEach((r, k) => {
@@ -105,30 +147,33 @@ function hover(f, years, x, rows) {
  * series: [{name, values, color, dash?, type?: "line"|"bar", barColor?: (v)=>color}]
  * refs: [{value, label}] horizontal reference lines
  */
-export function lineChart(container, { years, series, fmt, fmtTick = fmt, height = 260, refs = [], zeroBase = false, label }) {
-  const f = frame(container, height);
+export function lineChart(container, { years, series, fmt, fmtTick = fmt, fmtEnd = fmt, height = 260, refs = [], zeroBase = false, label }) {
+  const hasBar = series.some((s) => s.type === "bar");
+  const lastOf = (s) => { for (let i = s.values.length - 1; i >= 0; i--) if (s.values[i] != null) return s.values[i]; return null; };
+  let ends = series.filter((s) => lastOf(s) != null).map((s) => ({ s, text: s.short || s.name, value: (s.fmtEnd || fmtEnd)(lastOf(s)), color: s.color }));
+  // Lines that end at the same value share one label ("Your plan = President  171%").
+  const lines = ends.filter((e) => e.s.type !== "bar");
+  if (lines.length > 1 && lines.every((e) => e.value === lines[0].value)) {
+    const order = lines.slice().sort((a, b) => (b.s.width || 2) - (a.s.width || 2));
+    ends = [...ends.filter((e) => e.s.type === "bar"), { ...order[0], text: order.map((e) => e.text).join(" = ") }];
+  }
+  const narrowGuess = (container.clientWidth || 600) < 480;
+  const f = frame(container, height, narrowGuess ? 0 : endWidth(ends));
   if (label) f.svg.setAttribute("aria-label", label);
   let lo = Infinity, hi = -Infinity;
   for (const s of series) for (const v of s.values) if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
   for (const r of refs) { lo = Math.min(lo, r.value); hi = Math.max(hi, r.value); }
-  if (zeroBase || series.some((s) => s.type === "bar")) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (zeroBase || hasBar) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
   const pad = (hi - lo) * 0.06 || 1;
   const ticks = niceTicks(lo - (lo < 0 ? pad : 0), hi + pad);
   const y0 = ticks[0], y1 = ticks[ticks.length - 1];
   const y = (v) => f.m.t + f.ih - ((v - y0) / (y1 - y0)) * f.ih;
-  const x = axes(f, years, y, ticks, fmtTick);
-
-  for (const r of refs) {
-    const yy = y(r.value);
-    svgEl("line", { x1: f.m.l, x2: f.m.l + f.iw, y1: yy, y2: yy, class: "ref" }, f.svg);
-    const t = svgEl("text", { x: f.m.l + 4, y: yy - 4, class: "ref-label" }, f.svg);
-    t.textContent = r.label;
-  }
+  const x = axes(f, years, y, ticks, fmtTick, hasBar);
 
   const rows = [];
   // Bars first so lines draw over them.
   for (const s of series.filter((s) => s.type === "bar")) {
-    const bw = Math.max(2, (f.iw / years.length) - 2);
+    const bw = Math.max(2, (f.iw / years.length) * 0.78);
     s.values.forEach((v, i) => {
       if (v == null) return;
       const top = y(Math.max(0, v)), bot = y(Math.min(0, v));
@@ -144,25 +189,57 @@ export function lineChart(container, { years, series, fmt, fmtTick = fmt, height
       "stroke-linejoin": "round", "stroke-linecap": "round" }, f.svg);
     rows.push({ ...s, y, fmt });
   }
-  // Direct labels at the right end (wide screens); the legend above covers narrow ones.
+
+  // Reference lines go on top of the data, with the label in whichever corner is clearest of the lines.
+  for (const r of refs) refLine(f, r, y, x, series);
+
   if (!f.narrow) {
-    const placed = [];
-    for (const s of series) {
-      const v = s.values[s.values.length - 1];
-      if (v == null) continue;
-      let yy = y(v) + 4;
-      for (const p of placed) if (Math.abs(p - yy) < 14) yy = p + (yy >= p ? 14 : -14);
-      placed.push(yy);
-      const t = svgEl("text", { x: f.m.l + f.iw + 6, y: yy, class: "end-label" }, f.svg);
-      t.textContent = s.short || s.name;
-    }
+    endLabels(f, ends.map((e) => {
+      const v = lastOf(e.s);
+      // A bar's label points at the bar's end; a line's at its last point.
+      return { ...e, want: y(v) + (e.s.type === "bar" ? (v < 0 ? -2 : 2) : 0) };
+    }));
   }
   hover(f, years, x, rows);
 }
 
+function refLine(f, r, y, x, series) {
+  const { svg, m, iw } = f;
+  const yy = y(r.value);
+  svgEl("line", { x1: m.l, x2: m.l + iw, y1: yy, y2: yy, class: "ref" }, svg);
+  const w = textWidth(r.label, 400) + 4, h = 12;
+  const n = series[0]?.values.length || 1;
+  const xi = (px) => Math.max(0, Math.min(n - 1, x.inv(px)));
+  // Clearance between a candidate label box and the plotted values beneath it, in pixels.
+  const clearance = (x0, top) => {
+    let best = Infinity;
+    for (let i = xi(x0 - 4); i <= xi(x0 + w + 4); i++) {
+      for (const s of series) {
+        const v = s.values[i];
+        if (v == null) continue;
+        const py = s.type === "bar" ? [y(Math.max(0, v)), y(Math.min(0, v))] : [y(v), y(v)];
+        const d = py[1] < top ? top - py[1] : py[0] > top + h ? py[0] - top - h : 0;
+        best = Math.min(best, d);
+      }
+    }
+    return best;
+  };
+  const cands = [
+    { x0: m.l + 4, top: yy - h - 3 }, { x0: m.l + 4, top: yy + 3 },
+    { x0: m.l + iw - w - 4, top: yy - h - 3 }, { x0: m.l + iw - w - 4, top: yy + 3 },
+    { x0: m.l + iw / 2 - w / 2, top: yy - h - 3 }, { x0: m.l + iw / 2 - w / 2, top: yy + 3 },
+  ].filter((c) => c.top >= m.t - 2 && c.top + h <= m.t + f.ih);
+  let pick = cands[0] || { x0: m.l + 4, top: yy - h - 3 }, bestC = -1;
+  for (const c of cands) { const cl = Math.min(clearance(c.x0, c.top), 30); if (cl > bestC + 0.5) { bestC = cl; pick = c; } }
+  const t = svgEl("text", { x: pick.x0 + 2, y: pick.top + h - 2, class: "ref-label halo" }, svg);
+  t.textContent = r.label;
+}
+
 /** layers: [{name, values, color}] stacked bottom-up; line: {name, values, color} drawn on top. */
 export function stackChart(container, { years, layers, line, fmt, fmtTick = fmt, height = 280, label }) {
-  const f = frame(container, height);
+  const names = [...layers.map((l) => l.short || l.name), ...(line ? [line.short || line.name] : [])];
+  const narrowGuess = (container.clientWidth || 600) < 480;
+  const f = frame(container, height, narrowGuess ? 0 : Math.max(...names.map((n) => textWidth(n))));
   if (label) f.svg.setAttribute("aria-label", label);
   const tot = years.map((_, i) => layers.reduce((s, l) => s + Math.max(0, l.values[i]), 0));
   const hi = Math.max(...tot, ...(line ? line.values : [0]));
@@ -172,6 +249,8 @@ export function stackChart(container, { years, layers, line, fmt, fmtTick = fmt,
   const x = axes(f, years, y, ticks, fmtTick);
   const acc = years.map(() => 0);
   const rows = [];
+  const labels = [];
+  const last = years.length - 1;
   for (const l of layers) {
     const lower = acc.slice();
     years.forEach((_, i) => (acc[i] += Math.max(0, l.values[i])));
@@ -180,21 +259,16 @@ export function stackChart(container, { years, layers, line, fmt, fmtTick = fmt,
     for (let i = years.length - 1; i >= 0; i--) d += "L" + x(i).toFixed(1) + "," + y(lower[i]).toFixed(1);
     svgEl("path", { d: d + "Z", fill: l.color, class: "area" }, f.svg);
     rows.unshift({ ...l, y: () => 0, fmt, noDot: true });
-    if (!f.narrow) {
-      const i = years.length - 1;
-      const mid = (acc[i] + lower[i]) / 2;
-      if (y(lower[i]) - y(acc[i]) > 11) {
-        const t = svgEl("text", { x: f.m.l + f.iw + 6, y: y(mid) + 4, class: "end-label" }, f.svg);
-        t.textContent = l.short || l.name;
-      }
-    }
+    if (y(lower[last]) - y(acc[last]) > 0.5) labels.push({ text: l.short || l.name, want: y((acc[last] + lower[last]) / 2), color: l.color });
   }
   if (line) {
     let d = "";
     line.values.forEach((v, i) => (d += (i ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1)));
     svgEl("path", { d, fill: "none", stroke: line.color, "stroke-width": 2.5, "stroke-dasharray": "6 4" }, f.svg);
     rows.unshift({ ...line, y, fmt, dash: true });
+    labels.push({ text: line.short || line.name, want: y(line.values[last]), color: line.color, line: true });
   }
+  if (!f.narrow) endLabels(f, labels);
   rows.push({ name: "Total spending", values: tot, color: "transparent", y, fmt, noDot: true });
   hover(f, years, x, rows);
 }

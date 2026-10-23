@@ -125,7 +125,7 @@ export function renderSimple() {
   const more = el("div", "simple-more");
   more.id = "simple-more";
   res.append(more);
-  const adv = el("button", "btn ghost", "Open Advanced mode for every line of the budget →");
+  const adv = el("button", "btn ghost", "See every line of the budget in Advanced mode →");
   adv.addEventListener("click", () => goAdvanced());
   res.append(adv);
   const how = el("a", "small how-link", "How these numbers are calculated");
@@ -136,6 +136,12 @@ export function renderSimple() {
   grid.append(left, right);
   box.append(grid);
   updateSimple();
+  // Redraw the chart when its width changes (rotating a phone, resizing a window).
+  let w = 0;
+  new ResizeObserver(() => {
+    const c = $("#simple-chart"), nw = c ? c.clientWidth : 0;
+    if (nw && Math.abs(nw - w) > 20) { w = nw; requestAnimationFrame(() => { if (!box.hidden) renderResults(); }); }
+  }).observe(right);
 }
 
 function section(title, note) {
@@ -359,10 +365,10 @@ function renderResults() {
     k.append(c);
   };
   const L = Y[Y.length - 1];
-  const fmtD = (d) => (d.debt <= 0 ? "Paid off" : Math.round(d.pct) + "% of GDP");
+  const fmtD = (d) => (d.debt <= 0 ? "Paid off" : Math.round(d.pct) + "%");
   const better = (a, b) => (Math.abs(a - b) < 0.5 ? null : a < b);
-  card(`Debt in ${P.planStart + 9}`, fmtD(sum.mine.d10), `President's budget: ${Math.round(sum.base.d10.pct)}%`, better(sum.mine.d10.pct, sum.base.d10.pct));
-  card(`Debt in ${L}`, fmtD(sum.mine.d30), `President's budget: ${Math.round(sum.base.d30.pct)}%`, better(sum.mine.d30.pct, sum.base.d30.pct));
+  card(`Debt in ${P.planStart + 9}, % of GDP`, fmtD(sum.mine.d10), `President's budget: ${Math.round(sum.base.d10.pct)}%`, better(sum.mine.d10.pct, sum.base.d10.pct));
+  card(`Debt in ${L}, % of GDP`, fmtD(sum.mine.d30), `President's budget: ${Math.round(sum.base.d30.pct)}%`, better(sum.mine.d30.pct, sum.base.d30.pct));
   const m = sum.mine;
   if (m.payoff) card("Debt paid off", String(m.payoff.year), m.payoff.extrapolated ? "extrapolated past 2056" : "", true);
   else if (m.firstSurplus) card("First surplus", String(m.firstSurplus), "but debt isn't paid off by 2150", true);

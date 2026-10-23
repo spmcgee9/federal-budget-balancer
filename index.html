@@ -115,7 +115,6 @@
     <section data-panel="changes" hidden>
       <div class="changes-head">
         <button class="btn" id="share">Copy share link</button>
-        <button class="btn ghost" id="reset-all">Reset everything</button>
       </div>
       <div id="changes"></div>
     </section>
@@ -222,7 +221,10 @@
         b.hidden = false;
         b.textContent = "Something didn't load correctly (" + msg + "). Try reloading the page; if it keeps happening, please report it.";
       }
-      window.addEventListener("error", function (e) { show((e.message || "script error") + (e.filename ? " in " + e.filename.split("/").pop().split("?")[0] : "")); });
+      window.addEventListener("error", function (e) {
+        // Browsers report this harmless layout notice as an error; it isn't one.
+        if (/ResizeObserver loop/.test(e.message || "")) return;
+        show((e.message || "script error") + (e.filename ? " in " + e.filename.split("/").pop().split("?")[0] : "")); });
       window.addEventListener("unhandledrejection", function (e) { show(e.reason && e.reason.message ? e.reason.message : "loading error"); });
     })();
   </script>

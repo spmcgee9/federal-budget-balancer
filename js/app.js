@@ -617,6 +617,25 @@ function selectTab(name) {
   if (name === "projections") renderProjections();
   if (name === "revenue") updateRevenue();
   if (name === "proposals") updateProposals();
+  // On phones the tab bar scrolls sideways; keep the chosen tab in view.
+  const tabs = $(".tabs"), sel = document.querySelector(`[role=tab][data-tab="${name}"]`);
+  if (tabs && sel && tabs.scrollWidth > tabs.clientWidth) {
+    const left = sel.offsetLeft - tabs.offsetLeft, right = left + sel.offsetWidth;
+    if (left < tabs.scrollLeft || right > tabs.scrollLeft + tabs.clientWidth) tabs.scrollTo({ left: Math.max(0, left - 24), behavior: "smooth" });
+  }
+}
+
+// Fade the edge of the tab bar when more tabs are hidden off to the side.
+function tabFades() {
+  const t = $(".tabs");
+  if (!t) return;
+  const set = () => {
+    t.classList.toggle("more-right", t.scrollLeft + t.clientWidth < t.scrollWidth - 2);
+    t.classList.toggle("more-left", t.scrollLeft > 2);
+  };
+  t.addEventListener("scroll", set, { passive: true });
+  new ResizeObserver(() => requestAnimationFrame(set)).observe(t);
+  set();
 }
 
 function toast(msg, { undo = false, ms = 2400 } = {}) {
@@ -651,6 +670,7 @@ function rebuildViews() {
 }
 
 function wire() {
+  tabFades();
   document.querySelectorAll("[role=tab]").forEach((b) => b.addEventListener("click", () => selectTab(b.dataset.tab)));
   $("#mand-toggle").addEventListener("change", (e) => {
     model.setMandatoryUnlocked(e.target.checked);
@@ -671,7 +691,6 @@ function wire() {
   $("#drawer-close").addEventListener("click", () => ($("#drawer").hidden = true));
   $("#drawer").addEventListener("click", (e) => { if (e.target.id === "drawer") $("#drawer").hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#drawer").hidden = true; });
-  $("#reset-all").addEventListener("click", startOver);
   $("#start-over").addEventListener("click", startOver);
   $("#toast-undo").addEventListener("click", () => {
     if (!undoState) return;
