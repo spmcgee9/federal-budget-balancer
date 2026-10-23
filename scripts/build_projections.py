@@ -37,6 +37,17 @@ TARIFF_FY2026_LOSS = 250.0
 TARIFF_2027_2036_LOSS = 700.0
 TARIFF_URL = "https://www.cbo.gov/publication/62704"
 
+# OMB's economic assumptions for the FY2027 President's budget (Analytical Perspectives, Table 1-1 and 1-2,
+# calendar years; information as of November 2025). Used for the "OMB forecast" option.
+OMB_URL = "https://www.whitehouse.gov/wp-content/uploads/2026/04/ap_1_assumptions_fy2027.pdf"
+OMB_GDP = {2025: 30705, 2026: 32525, 2027: 34223, 2028: 35989, 2029: 37845, 2030: 39772, 2031: 41755,
+           2032: 43821, 2033: 45988, 2034: 48261, 2035: 50646, 2036: 53154}          # nominal GDP, $B
+OMB_10Y = {2026: 3.7, 2027: 3.5, 2028: 3.5, 2029: 3.4, 2030: 3.3, 2031: 3.3, 2032: 3.3, 2033: 3.3,
+           2034: 3.3, 2035: 3.3, 2036: 3.3}
+OMB_BILL = {y: 3.1 for y in range(2027, 2037)} | {2026: 3.2}
+CBO_BILL_IN_OMB_TABLE = {2026: 3.5, 2027: 3.2, 2028: 3.2, 2029: 3.1, 2030: 3.1, 2031: 3.1, 2032: 3.1,
+                         2033: 3.0, 2034: 3.0, 2035: 3.0, 2036: 3.0}  # CBO's bill rates as shown in OMB's Table 1-2
+
 
 def find(d, pattern):
     hits = sorted(glob.glob(os.path.join(d, pattern)))
@@ -207,6 +218,13 @@ def main():
     tariff = [r(TARIFF_FY2026_LOSS if y == 2026 else cust[y] * frac) for y in years]
 
     p0 = price[2026]
+    # OMB forecast relative to CBO: GDP ratio, and a shift in the average interest rate on debt
+    # (half bills, half 10-year notes). After 2036, OMB's level of GDP relative to CBO's is held constant.
+    omb_ratio, omb_dr = [], []
+    for y in years:
+        yy = min(y, 2036)
+        omb_ratio.append(round(OMB_GDP[yy] / (gdp_cy[yy] * 1000), 4))
+        omb_dr.append(round(0.5 * (OMB_10Y[yy] - ten[yy]) + 0.5 * (OMB_BILL[yy] - CBO_BILL_IN_OMB_TABLE[yy]), 3))
     out = {
         "meta": {
             "generated": dt.date.today().isoformat(),
@@ -233,7 +251,9 @@ def main():
         "pb": {"mand": pb_mand, "dd": pb_dd, "nd": pb_nd},     # CBO estimate of President's proposals
         "tariff": tariff,                                     # customs revenue lost vs. Feb baseline
         "pop": [round(pop[y], 2) for y in years] if pop else None,
-        "gdpCY2023": round(gdp_cy[2023] * 1000, 1),                # calendar-2023 nominal GDP, $B (for IRS 2023 data)
+        "gdpCY2023": round(gdp_cy[2023] * 1000, 1),
+        "omb": {"gdpRatio": omb_ratio, "dr": omb_dr, "url": OMB_URL,
+                "note": "OMB FY2027 economic assumptions vs. CBO Feb 2026; held at 2036 levels afterward"},                # calendar-2023 nominal GDP, $B (for IRS 2023 data)
         "wages": [round(wages[y] * 1000, 1) for y in years],      # wage and salary disbursements, $B (calendar year)
         "capShare": [round(capshare[y], 3) for y in years],      # % of earnings below the Social Security taxable maximum
         "demo": {"years": sorted(demo), "groups": ["24 or younger", "25 to 54", "55 to 64", "65 or older", "Total"],

@@ -290,6 +290,18 @@ input.num:disabled { opacity: .45; }
 .who-table td.add { color: var(--out); } .who-table td.cut { color: var(--in); }
 .tip-row.two { grid-template-columns: 1fr auto; }
 
+/* assumptions */
+.assumptions summary { font-size: 15px; }
+#assumptions-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 4px 24px; margin-top: 6px; }
+.assume-row { padding: 8px 0; border-top: 1px solid var(--line); }
+.assume-row.changed { box-shadow: inset 3px 0 0 var(--warn); padding-left: 10px; }
+.assume-head { font-weight: 600; font-size: 14px; }
+.assume-ctl { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; flex-wrap: wrap; }
+.assume-ctl input.range { flex: 1; min-width: 140px; max-width: 260px; }
+.assume-ctl .lever-val { text-align: left; min-width: 0; }
+.assume-row .small { margin: 2px 0 0; }
+#assume-reset { margin: 8px 0 4px; }
+
 /* projections */
 .proj-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; margin-bottom: 12px; }
 .seg-ctl { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }

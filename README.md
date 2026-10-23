@@ -47,6 +47,18 @@ At the top of the Revenue tab, an editable chart of income tax brackets for sing
 - The 2023 change is grown with GDP and multiplied by 0.85, so a 1-point increase in every bracket matches CBO's estimate ($1.2 trillion over 10 years).
 - The "who pays" table (IRS Table 1.1) is approximate: it uses each income group's average taxable income, before behavioral responses.
 
+## Assumptions (Phase 5)
+
+An **Economic and behavioral assumptions** panel at the top of the Projections tab changes the outlook for both the President's budget and your plan:
+
+- **Forecast:** CBO (default) or OMB's FY2027 economic assumptions (faster growth, lower rates). OMB's GDP and interest rates are applied relative to CBO's through 2036, then held.
+- **Growth:** ± real growth per year. Revenue moves in proportion; mandatory spending moves 0.4% per 1% of GDP; discretionary spending is fixed in dollars. (0.1 point slower growth ≈ +$300B in deficits over 10 years, in line with CBO's rule of thumb.)
+- **Interest rates:** ± points, reaching the average rate on the debt over about five years. (+0.1 point ≈ +$400B over 10 years.)
+- **Debt feedback:** optional; each point of debt-to-GDP above CBO's current-law path raises rates 2 basis points.
+- **Behavior:** elasticity of taxable income for the income tax curve (default 0.25) and the share of tax-break estimates counted on repeal (default 75%).
+
+Assumptions are saved in share links and reset by "Start over."
+
 ## Data
 
 - `data/budget.json`: OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Built by `scripts/build_data.py`.
@@ -103,7 +115,7 @@ Then visit http://localhost:8000.
 2. ✅ Projections: 10-, 20-, and 30-year deficits and debt ($, today's $, % of GDP), interest calculated from your plan, debt payoff year
 3. ✅ Revenue levers (income, capital gains, corporate, payroll, estate, excise, tariffs, new taxes, tax breaks) and phase-ins
 4. ✅ Editable income-tax curve calibrated to IRS income data
-5. Economic assumptions (growth, interest rates, OMB vs. CBO forecasts) and behavioral response settings
+5. ✅ Economic assumptions (growth, interest rates, OMB vs. CBO forecasts, debt feedback) and behavioral response settings
 6. Proposed new programs (universal health care, universal pre-K, UBI, free college…)
 
 ## Caveats

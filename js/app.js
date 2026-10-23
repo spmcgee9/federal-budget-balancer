@@ -40,7 +40,7 @@ async function init() {
     const fi = ctx.Y.indexOf(model.fy);
     model.revScore = () => scoreAll(ctx, model).total[fi] * 1000;
     initRevenue(model, ctx, { changed: () => { refresh(); commit(); }, drawer: openDrawerShell });
-    initProjections(proj, model);
+    initProjections(proj, model, () => { refresh(); commit(); });
   }
   else $("[data-panel=projections]").prepend(Object.assign(document.createElement("p"), { className: "note", textContent: "Projection data couldn't be loaded." }));
   document.querySelectorAll("[data-fy]").forEach((e) => (e.textContent = "FY" + model.fy));

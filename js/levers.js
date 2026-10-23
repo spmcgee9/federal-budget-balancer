@@ -33,7 +33,7 @@ export const GROUPS = [
   { id: "tar", name: "Tariffs" },
   { id: "new", name: "New taxes" },
   { id: "est", name: "Estate and gift tax" },
-  { id: "brk", name: "Tax breaks", note: "Deductions, exclusions, and credits. Repealing one raises less than its published cost: people change behavior and breaks overlap, so this tool counts 75% of OMB's estimate." },
+  { id: "brk", name: "Tax breaks", note: "Deductions, exclusions, and credits. Repealing one raises less than its published cost: people change behavior and breaks overlap, so this tool counts 75% of OMB's estimate (adjustable under Assumptions on the Projections tab)." },
 ];
 
 export const LEVERS = [
@@ -230,6 +230,8 @@ export function addLevers(extra, { front = false } = {}) {
 
 // Score every active lever, applying each one's phase-in.
 export function scoreAll(ctx, model) {
+  ctx.eti = model.assume?.eti ?? DEFAULT_ETI;
+  ctx.realization = (model.assume?.real ?? 75) / 100;
   const n = ctx.Y.length;
   const total = new Array(n).fill(0);
   const byId = {};
@@ -259,7 +261,7 @@ export function taxBreakLevers(tb) {
     id: b.id, group: "brk", name: b.name,
     control: { type: "slider", min: 0, max: 100, step: 5, def: 0, fmt: (v) => (v === 100 ? "Repeal" : v === 0 ? "Keep" : `Cut ${v}%`) },
     desc: b.desc,
-    source: { name: tb.source, url: tb.url, detail: `OMB line items: ${b.omb.join("; ")}. Counted at 75% of OMB's estimate.` },
+    source: { name: tb.source, url: tb.url, detail: `OMB line items: ${b.omb.join("; ")}. Counted at 75% of OMB's estimate by default (adjustable under Assumptions on the Projections tab).` },
     score: (v, ctx) => {
       const last = b.years[b.years.length - 1];
       const iLast = ctx.Y.indexOf(last);
@@ -268,7 +270,7 @@ export function taxBreakLevers(tb) {
         const k = b.years.indexOf(y);
         // After OMB's last year, hold the break's share of GDP constant (expired breaks stay at zero).
         const val = k >= 0 ? b.v[k] : b.v[b.v.length - 1] * (ctx.P.gdp[i] / ctx.P.gdp[iLast]);
-        return (v / 100) * val * TAX_BREAK_REALIZATION;
+        return (v / 100) * val * (ctx.realization ?? TAX_BREAK_REALIZATION);
       });
     },
   }));

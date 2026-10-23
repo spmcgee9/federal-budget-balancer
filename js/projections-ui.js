@@ -21,9 +21,10 @@ const MIX = [
   ["netint", "Net interest", "--mix-6"],
 ];
 
-let P, model, state = { units: "usd", h: 30 }, last;
+let P, model, state = { units: "usd", h: 30 }, last, GDP, onPlanChange;
 
-export function initProjections(projData, budgetModel) {
+export function initProjections(projData, budgetModel, changed) {
+  onPlanChange = changed;
   P = projData;
   P.planStart = budgetModel.fy;
   model = budgetModel;
@@ -40,6 +41,7 @@ export function initProjections(projData, budgetModel) {
     const a = el("a", "", s.name); a.href = s.url; a.target = "_blank"; a.rel = "noopener";
     src.append(a, document.createTextNode(i < P.meta.sources.length - 1 ? "; " : "."));
   });
+  buildAssumptions();
   let w = 0;
   new ResizeObserver(() => {
     const nw = $("[data-panel=projections]").clientWidth;
@@ -51,7 +53,7 @@ function save() { try { localStorage.setItem("proj-view", JSON.stringify(state))
 
 // Convert billions of nominal dollars in year index i to the chosen units.
 function conv(v, i) {
-  if (state.units === "gdp") return (v / P.gdp[i]) * 100;
+  if (state.units === "gdp") return (v / GDP[i]) * 100;
   if (state.units === "real") return v / P.deflator[i];
   return v;
 }
@@ -73,7 +75,9 @@ export function render() {
   document.querySelectorAll("#proj-units button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.units === state.units));
   document.querySelectorAll("#proj-horizon button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.h === state.h));
 
-  const res = project(P, { deltas: model.yearDeltas(), rev: revenueScores().total });
+  const res = project(P, { deltas: model.yearDeltas(), rev: revenueScores().total, assume: model.assume });
+  GDP = res.gdp;
+  syncAssumptions();
   const sum = summarize(P, res);
   last = { res, sum };
   const Y = res.years;
@@ -128,12 +132,16 @@ function headline(res, sum) {
   const b = sum.base, m = sum.mine;
   const Y = res.years, L = Y[Y.length - 1];
   const changed = res.userSpend.some((v) => Math.abs(v) > 0.05) || model.rev.size > 0;
-  const today = (P.base.debt[Y.indexOf(P.planStart) - 1] / P.gdp[Y.indexOf(P.planStart) - 1]) * 100;
+  const today = (P.base.debt[Y.indexOf(P.planStart) - 1] / GDP[Y.indexOf(P.planStart) - 1]) * 100;
   const box = $("#proj-headline");
   box.textContent = "";
   const add = (t, cls) => { const s = el(cls ? "strong" : "span", cls || "", t); box.append(s); };
+  if (model.assumeChanged()) {
+    const tag = el("span", "chip warn-soft", "custom assumptions");
+    box.append(tag, document.createTextNode(" "));
+  }
   if (!changed) {
-    add(`Under the President's budget, as estimated by CBO, debt held by the public grows from ${Math.round(today)}% of GDP today to `);
+    add(`Under the President's budget, ${model.assume.fc === "omb" ? "with OMB's economic forecast" : "as estimated by CBO"}, debt held by the public grows from ${Math.round(today)}% of GDP today to `);
     add(`${Math.round(b.d30.pct)}% in ${L}`, "add");
     add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending and Revenue tabs to see how your plan compares.`);
     return;
@@ -214,10 +222,84 @@ function table(res) {
     const r = el("tr");
     const m = res.mine;
     const cells = [String(Y[i]), money(m.rev[i]), money(m.out[i]), money(m.netint[i]), money(m.deficit[i]), money(m.debt[i]),
-      ((m.debt[i] / P.gdp[i]) * 100).toFixed(1) + "%", ((res.base.debt[i] / P.gdp[i]) * 100).toFixed(1) + "%"];
+      ((m.debt[i] / GDP[i]) * 100).toFixed(1) + "%", ((res.base.debt[i] / GDP[i]) * 100).toFixed(1) + "%"];
     cells.forEach((c, k) => r.append(el(k ? "td" : "th", "", c)));
     t.append(r);
   }
   wrap.append(t);
   wrap.append(el("p", "small", "Dollar amounts are nominal. Revenue and spending are for your plan."));
+}
+
+// ---------- assumptions panel ----------
+const ASSUME_UI = [
+  { k: "fc", type: "seg", label: "Economic forecast", options: [["cbo", "CBO (default)"], ["omb", "OMB (President's budget)"]],
+    help: "CBO's forecast is the standard nonpartisan baseline. The Administration's forecast assumes faster growth (about 3% a year vs. CBO's 1.8%) and lower interest rates, which shrinks deficits on paper. After 2036, OMB's higher level of GDP is held constant." },
+  { k: "dg", type: "slider", label: "Economic growth", min: -1, max: 1, step: 0.1, fmt: (v) => (v > 0 ? "+" : "") + v.toFixed(1) + " pts a year",
+    help: "Faster or slower real growth than the forecast, every year. More growth means more revenue; some mandatory spending rises too (0.4% per 1% of GDP) because benefits are partly tied to wages. Discretionary spending is set in dollars, so it doesn't change. CBO's rule of thumb: 0.1 point slower growth adds roughly $300 billion to deficits over 10 years." },
+  { k: "dr", type: "slider", label: "Interest rates", min: -2, max: 2, step: 0.1, fmt: (v) => (v > 0 ? "+" : "") + v.toFixed(1) + " pts",
+    help: "Higher or lower rates than the forecast. The change reaches the average rate on the debt over about five years as old Treasury securities mature and are refinanced. CBO's rule of thumb: rates 0.1 point higher add roughly $350–400 billion to deficits over 10 years." },
+  { k: "fb", type: "toggle", label: "Debt pushes up interest rates",
+    help: "When on, each percentage point of debt-to-GDP above CBO's current-law path raises interest rates by 2 basis points (0.02 points), and lower debt lowers them, a relationship CBO uses in its long-term analysis. Off by default because CBO's baseline already includes it for current law." },
+  { k: "eti", type: "slider", label: "How much income responds to tax rates", min: 0, max: 0.6, step: 0.05, fmt: (v) => v.toFixed(2),
+    help: "The 'elasticity of taxable income': when income tax rates rise, people work, shift, or shelter income so that less is reported. 0.25 is a middle estimate; studies range from about 0.1 to 0.4 or more. Higher values make tax increases on high earners raise less. Applies to the income tax brackets." },
+  { k: "real", type: "slider", label: "Revenue from repealing tax breaks", min: 50, max: 100, step: 5, fmt: (v) => v + "% of OMB's estimate",
+    help: "Repealing a tax break raises less than its published cost, because people change behavior and breaks overlap. 75% is the default." },
+];
+const asRows = new Map();
+
+function buildAssumptions() {
+  const box = $("#assumptions-body");
+  if (!box) return;
+  box.textContent = "";
+  for (const a of ASSUME_UI) {
+    const row = el("div", "assume-row");
+    const head = el("div", "assume-head");
+    head.append(el("span", "assume-label", a.label));
+    const ctl = el("div", "assume-ctl");
+    let input, val;
+    if (a.type === "seg") {
+      input = el("div", "seg-ctl");
+      for (const [v, label] of a.options) {
+        const b = el("button", "", label); b.dataset.v = v;
+        b.addEventListener("click", () => setA(a.k, v));
+        input.append(b);
+      }
+    } else if (a.type === "toggle") {
+      input = el("input", "switch"); input.type = "checkbox"; input.setAttribute("aria-label", a.label);
+      input.addEventListener("change", () => setA(a.k, input.checked));
+      val = el("span", "lever-val");
+    } else {
+      input = el("input", "range"); input.type = "range"; input.min = a.min; input.max = a.max; input.step = a.step;
+      input.setAttribute("aria-label", a.label);
+      input.addEventListener("input", () => setA(a.k, +input.value));
+      val = el("span", "lever-val");
+    }
+    ctl.append(input); if (val) ctl.append(val);
+    row.append(head, ctl, el("p", "small", a.help));
+    box.append(row);
+    asRows.set(a.k, { a, input, val, row });
+  }
+  const reset = $("#assume-reset");
+  reset?.addEventListener("click", () => { model.resetAssume(); onPlanChange?.(); });
+}
+
+function setA(k, v) {
+  model.setAssume(k, v);
+  onPlanChange?.();
+}
+
+function syncAssumptions() {
+  const defaults = { fc: "cbo", dg: 0, dr: 0, fb: false, eti: 0.25, real: 75 };
+  for (const [k, { a, input, val, row }] of asRows) {
+    const v = model.assume[k];
+    if (a.type === "seg") input.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+    else if (a.type === "toggle") { input.checked = !!v; val.textContent = v ? "On" : "Off"; }
+    else { if (document.activeElement !== input) input.value = v; val.textContent = a.fmt(v); }
+    row.classList.toggle("changed", v !== defaults[k]);
+  }
+  const ch = model.assumeChanged();
+  const flag = $("#assume-flag");
+  if (flag) { flag.hidden = !ch; }
+  const reset = $("#assume-reset");
+  if (reset) reset.disabled = !ch;
 }

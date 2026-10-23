@@ -120,6 +120,12 @@
           <button data-h="30" aria-pressed="true">30 years</button>
         </div>
       </div>
+      <details class="method assumptions" id="assumptions">
+        <summary>Economic and behavioral assumptions <span class="chip warn-soft" id="assume-flag" hidden>changed</span></summary>
+        <p class="small">These settings change the projections for both the President's budget and your plan, so you can see how sensitive the outlook is. They don't change the Spending tab, which shows OMB's numbers for <span data-fy>FY</span>.</p>
+        <div id="assumptions-body"></div>
+        <button class="btn ghost small-btn" id="assume-reset" disabled>Reset assumptions</button>
+      </details>
       <p class="proj-headline" id="proj-headline"></p>
       <div class="kpis" id="kpis"></div>
 
@@ -161,7 +167,8 @@
           <p><strong>Your plan.</strong> For 2027–2031, your changes are applied to each account's year-by-year amounts in OMB's budget data, the same numbers as the Spending tab. After 2031, the change in each category (Social Security, Medicare, Medicaid and other health, other mandatory, discretionary) grows with CBO's projection for that category, so a 10% Social Security cut stays a 10% cut as the program grows.</p>
           <p><strong>Interest.</strong> CBO's projected interest, plus interest on any extra or avoided debt at CBO's projected average interest rate on federal debt (3.5% in 2027, rising to 4.2%).</p>
           <p><strong>Paying off the debt.</strong> If the debt isn't gone by 2056, it is projected further by holding 2056's revenue and spending shares of GDP, growth rate, and interest rate constant. That's an extrapolation, not a CBO projection.</p>
-          <p><strong>What's not modeled (yet).</strong> Changes in spending or taxes don't change economic growth or interest rates here. FY2027 differs slightly from the Spending tab because this tab uses CBO's estimates and the Spending tab uses OMB's. Independent analysts' totals for the President's budget vary with their assumptions.</p>
+          <p><strong>Assumptions.</strong> The panel at the top can switch to OMB's economic forecast, change growth or interest rates, and turn on a feedback from debt to interest rates. Growth changes revenue in proportion and mandatory spending partly (0.4% per 1% of GDP); discretionary spending is set in dollars. Rate changes reach the average rate on the debt over about five years.</p>
+          <p><strong>What's not modeled.</strong> Spending and tax changes don't change economic growth directly (beyond the optional interest-rate feedback). FY2027 differs slightly from the Spending tab because this tab uses CBO's estimates and the Spending tab uses OMB's. Independent analysts' totals for the President's budget vary with their assumptions.</p>
           <p class="small" id="proj-sources"></p>
         </div>
       </details>
@@ -188,7 +195,7 @@
   </aside>
 
   <footer class="wrap foot">
-    <p>Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>. Amounts are outlays for fiscal year <span data-fy-num></span>. Projections: Congressional Budget Office (see "How these projections work" on the Projections tab). This tool does not yet model how spending or tax changes affect the economy. <span id="gen"></span></p>
+    <p>Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>. Amounts are outlays for fiscal year <span data-fy-num></span>. Projections: Congressional Budget Office (see "How these projections work" on the Projections tab). Economic and behavioral assumptions can be changed on the Projections tab; spending and tax changes don't feed back into growth. <span id="gen"></span></p>
   </footer>
   <div class="toast" id="toast" hidden><span id="toast-text"></span><button id="toast-undo" hidden>Undo</button></div>
   <script type="module" src="js/app.js"></script>

@@ -52,22 +52,50 @@ export function project(P, plan = {}) {
       }
     }
   }
-  const userRev = plan.rev || new Array(n).fill(0); // revenue levers arrive in Phase 3
+  const userRev = plan.rev || new Array(n).fill(0);
+
+  // ---- economic assumptions (Phase 5) ----
+  // A = { fc: "cbo"|"omb", dg: real growth change (pts/yr), dr: interest-rate change (pts), fb: debt feedback on/off }
+  const A = plan.assume || {};
+  const start = P.planStart;
+  const gdpRatio = Y.map((y, i) => {
+    let r = A.fc === "omb" ? P.omb.gdpRatio[i] / P.omb.gdpRatio[Y.indexOf(start - 1)] : 1;
+    if (A.dg) r *= Math.pow(1 + A.dg / 100, Math.max(0, y - (start - 1)));
+    return y < start ? 1 : r;
+  });
+  const gdp = P.gdp.map((g, i) => g * gdpRatio[i]);
+  // Interest-rate changes reach the average rate on the debt gradually as it rolls over (about 5 years).
+  const roll = (y) => Math.max(0, Math.min(1, (y - (start - 1)) / 5));
+  const drBase = Y.map((y, i) => (y < start ? 0 : ((A.dr || 0) + (A.fc === "omb" ? P.omb.dr[i] : 0)) * roll(y)));
+  const MAND_ELASTICITY = 0.4;  // mandatory spending rises 0.4% for each 1% of extra GDP (benefits partly tied to wages and prices)
+  const FEEDBACK_BP = 2;        // basis points of interest per percentage point of debt-to-GDP above CBO's path
 
   const track = (withPlan) => {
     let X = 0; // debt above CBO current law
-    const o = { rev: [], nonint: [], netint: [], out: [], deficit: [], debt: [], extraInt: [] };
+    const o = { rev: [], nonint: [], netint: [], out: [], deficit: [], debt: [], extraInt: [], rate: [], gdp };
+    let prevRatioGap = 0;
     for (let i = 0; i < n; i++) {
       const r = P.rate[i] / 100;
       const pbE = P.pb.mand[i] + P.pb.dd[i] + P.pb.nd[i];
       const tar = P.tariff[i];
       const uS = withPlan ? userSpend[i] : 0;
       const uR = withPlan ? userRev[i] : 0;
-      const e = pbE + tar + uS - uR;            // added to the primary deficit vs. current law
-      const ii = r * (X + e / 2);               // interest on the difference (mid-year convention)
+      const uSm = withPlan ? uS - (byCat.disc?.[i] || 0) : 0;
+      const g = gdpRatio[i] - 1;
+      const revTot = b.rev[i] - tar + uR;
+      const mandTot = b.ss[i] + b.medicare[i] + b.health[i] + b.othm[i] + P.pb.mand[i] + uSm;
+      // A bigger economy brings in proportionally more revenue and raises mandatory spending somewhat;
+      // discretionary spending is set in dollars by Congress, so it doesn't change.
+      const econE = -revTot * g + MAND_ELASTICITY * mandTot * g;
+      const e = pbE + tar + uS - uR + econE;   // added to the primary deficit vs. current law
+      const fbShift = A.fb && Y[i] >= start ? (FEEDBACK_BP / 1e4) * prevRatioGap : 0;
+      const dr = drBase[i] / 100 + fbShift;
+      const debtPrev = (i > 0 ? b.debt[i - 1] : b.debt[0] + b.deficit[0]) + X;
+      // Interest on the extra debt at CBO's rate, plus any rate change applied to all debt.
+      const ii = r * (X + e / 2) + dr * (debtPrev + e / 2);
       X += e + ii;
-      const nonint = b.ss[i] + b.medicare[i] + b.health[i] + b.othm[i] + b.disc[i] + pbE + uS;
-      const rev = b.rev[i] - tar + uR;
+      const nonint = b.ss[i] + b.medicare[i] + b.health[i] + b.othm[i] + b.disc[i] + pbE + uS + MAND_ELASTICITY * mandTot * g;
+      const rev = revTot * (1 + g);
       const netint = b.netint[i] + ii;
       o.rev.push(rev);
       o.nonint.push(nonint);
@@ -76,6 +104,8 @@ export function project(P, plan = {}) {
       o.deficit.push(rev - nonint - netint);    // negative = deficit
       o.debt.push(b.debt[i] + X);
       o.extraInt.push(ii);
+      o.rate.push((r + dr) * 100);
+      prevRatioGap = ((b.debt[i] + X) / gdp[i] - b.debt[i] / P.gdp[i]) * 100;
     }
     return o;
   };
@@ -83,15 +113,16 @@ export function project(P, plan = {}) {
   const base = track(false);
   const mine = track(true);
   // Spending mix (plan) for the stacked chart, as dollars.
+  const gm = (i) => 1 + MAND_ELASTICITY * (gdpRatio[i] - 1);
   mine.mix = {
-    ss: b.ss.map((v, i) => v + (byCat.ss?.[i] || 0)),
-    medicare: b.medicare.map((v, i) => v + (byCat.medicare?.[i] || 0)),
-    health: b.health.map((v, i) => v + (byCat.health?.[i] || 0)),
-    othm: b.othm.map((v, i) => v + P.pb.mand[i] + (byCat.othm?.[i] || 0)),
+    ss: b.ss.map((v, i) => (v + (byCat.ss?.[i] || 0)) * gm(i)),
+    medicare: b.medicare.map((v, i) => (v + (byCat.medicare?.[i] || 0)) * gm(i)),
+    health: b.health.map((v, i) => (v + (byCat.health?.[i] || 0)) * gm(i)),
+    othm: b.othm.map((v, i) => (v + P.pb.mand[i] + (byCat.othm?.[i] || 0)) * gm(i)),
     disc: catPath.disc.map((v, i) => v + (byCat.disc?.[i] || 0)),
     netint: mine.netint,
   };
-  return { years: Y, base, mine, userSpend, extend: (o) => extendPayoff(P, o) };
+  return { years: Y, base, mine, userSpend, gdp };
 }
 
 // After CBO's horizon: hold the last year's revenue and spending shares of GDP, GDP growth,
@@ -101,10 +132,11 @@ export function extendPayoff(P, o, maxYear = 2150) {
   const last = n - 1;
   for (let i = 0; i < n; i++) if (o.debt[i] <= 0) return { year: Y[i], extrapolated: false };
   if (o.deficit[last] <= 0) return null;
-  const g = P.gdp[last] / P.gdp[last - 1] - 1;
-  const r = P.rate[last] / 100;
-  const primaryShare = (o.rev[last] - o.nonint[last]) / P.gdp[last];
-  let gdp = P.gdp[last], debt = o.debt[last];
+  const G = o.gdp || P.gdp;
+  const g = G[last] / G[last - 1] - 1;
+  const r = (o.rate ? o.rate[last] : P.rate[last]) / 100;
+  const primaryShare = (o.rev[last] - o.nonint[last]) / G[last];
+  let gdp = G[last], debt = o.debt[last];
   for (let y = Y[last] + 1; y <= maxYear; y++) {
     gdp *= 1 + g;
     const prim = primaryShare * gdp;
@@ -114,7 +146,8 @@ export function extendPayoff(P, o, maxYear = 2150) {
   return null;
 }
 
-export function summarize(P, res) {
+export function summarize(P0, res) {
+  const P = { ...P0, gdp: res.gdp || P0.gdp };
   const Y = res.years;
   const at = (y) => Y.indexOf(y);
   const pick = (o, y) => ({ debt: o.debt[at(y)], pct: (o.debt[at(y)] / P.gdp[at(y)]) * 100 });
@@ -133,7 +166,7 @@ export function summarize(P, res) {
       cum10: -sum(o.deficit, P.planStart, P.planStart + 9),
       int10: sum(o.netint, P.planStart, P.planStart + 9),
       intLast: o.netint[Y.length - 1], intLastPct: (o.netint[Y.length - 1] / P.gdp[Y.length - 1]) * 100,
-      firstSurplus: firstSurplus(o), peak: peak(o), payoff: extendPayoff(P, o),
+      firstSurplus: firstSurplus(o), peak: peak(o), payoff: extendPayoff(P0, o),
     };
   }
   return out;

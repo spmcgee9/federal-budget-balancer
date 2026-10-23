@@ -1,6 +1,8 @@
 // Budget model: the data tree, the user's settings, and the arithmetic.
 // All dollar amounts are in millions.
 
+export const ASSUME_DEFAULTS = { fc: "cbo", dg: 0, dr: 0, fb: false, eti: 0.25, real: 75 };
+
 export class BudgetModel {
   constructor(data, descriptions) {
     this.meta = data.meta;
@@ -44,6 +46,7 @@ export class BudgetModel {
     this.rev = new Map();      // revenue lever id -> value
     this.revPh = new Map();    // revenue lever id -> phase-in years override
     this.revScore = null;      // set by the app: () => FY budget-year revenue change (millions)
+    this.assume = { ...ASSUME_DEFAULTS }; // economic and behavioral assumptions (Projections tab)
     this.recompute();
   }
 
@@ -227,8 +230,13 @@ export class BudgetModel {
     this.rev.clear();
     this.revPh.clear();
     this.phase = 0;
+    this.assume = { ...ASSUME_DEFAULTS };
     this.recompute();
   }
+
+  setAssume(k, v) { this.assume[k] = v; this.recompute(); }
+  resetAssume() { this.assume = { ...ASSUME_DEFAULTS }; this.recompute(); }
+  assumeChanged() { return Object.keys(ASSUME_DEFAULTS).some((k) => this.assume[k] !== ASSUME_DEFAULTS[k]); }
 
   setPhase(n) { this.phase = n; this.recompute(); }
 
@@ -336,6 +344,9 @@ export class BudgetModel {
     for (const [id, s] of this.settings) {
       parts.push(`${id}:${s.on ? 1 : 0}:${+s.pct.toFixed(2)}${s.m ? ":m" : ":"}${s.ph != null ? ":" + s.ph : ""}`.replace(/:$/, ""));
     }
+    for (const k of Object.keys(ASSUME_DEFAULTS)) {
+      if (this.assume[k] !== ASSUME_DEFAULTS[k]) parts.push(`a.${k}=${this.assume[k] === true ? 1 : this.assume[k] === false ? 0 : this.assume[k]}`);
+    }
     for (const [id, v] of this.rev) {
       const ph = this.revPh.get(id);
       parts.push(`r.${id}=${typeof v === "number" ? +v.toFixed(4) : v}${ph != null ? "~" + ph : ""}`);
@@ -351,7 +362,15 @@ export class BudgetModel {
     this.rev.clear();
     this.revPh.clear();
     this.phase = 0;
+    this.assume = { ...ASSUME_DEFAULTS };
     for (const p of str.split(";").slice(1)) {
+      if (p.startsWith("a.")) {
+        const [k, raw] = p.slice(2).split("=");
+        if (!(k in ASSUME_DEFAULTS)) continue;
+        const d = ASSUME_DEFAULTS[k];
+        this.assume[k] = typeof d === "boolean" ? raw === "1" : typeof d === "number" ? (Number.isFinite(+raw) ? +raw : d) : raw;
+        continue;
+      }
       if (p === "m1") { this.mandatoryUnlocked = true; continue; }
       if (p === "m0") { this.mandatoryUnlocked = false; continue; }
       if (/^ph\d+$/.test(p)) { this.phase = +p.slice(2); continue; }
