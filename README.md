@@ -113,6 +113,10 @@ Download CBO's workbooks into a folder and run `python scripts/build_projections
 
 The tariff adjustment is a constant at the top of the script; update or remove it when CBO publishes a new baseline.
 
+## Icons and link previews
+
+`favicon.svg`, `favicon-32.png`, and `apple-touch-icon.png` are the browser-tab and phone home-screen icons. `og-image.png` (1200×630) is the picture shown when a link is shared in texts, chat apps, or social media; it shows the FY2027 President's-budget debt path (171% of GDP by 2056), so update it when a new budget comes out.
+
 ## Running it locally
 
 The page loads its data with `fetch`, so open it through a local web server rather than double-clicking the file:
