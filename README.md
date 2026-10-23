@@ -138,7 +138,8 @@ Then visit http://localhost:8000.
 6. ✅ Proposed new programs and tax cuts (single-payer, pre-K, child care, UBI, free college, Social Security tax, tariff rebates…)
 7. ✅ Simple mode (default) with an Advanced toggle
 8. ✅ Methodology and About page (`about.html`)
-9. UI clean-up
+9. ✅ UI clean-up (chart labels, layout, phone sizing)
+10. Performance and stability pass
 
 ## Credits
 
