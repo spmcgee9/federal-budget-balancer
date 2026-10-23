@@ -392,3 +392,6 @@ input.num:disabled { opacity: .45; }
   .chg-row { grid-template-columns: minmax(0, 1fr) auto auto; }
   .chg-what { grid-column: 1; grid-row: 2; }
 }
+
+.err-banner { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 70; max-width: calc(100% - 32px);
+  background: var(--out-bg); color: var(--out); border: 1px solid var(--out); border-radius: 8px; padding: 8px 12px; font-size: 13px; }

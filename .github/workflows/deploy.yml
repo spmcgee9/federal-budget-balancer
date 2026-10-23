@@ -58,6 +58,12 @@ jobs:
           git diff --cached --quiet || git commit -m "Refresh budget data (FY${{ inputs.fy || '2027' }})"
           git push
 
+      - name: Stamp file versions (so browsers load the new code after each deploy)
+        run: |
+          V="${GITHUB_SHA::8}"
+          find . -path ./.git -prune -o \( -name "*.js" -o -name "*.html" \) -type f -print0 | xargs -0 sed -i "s/?v=dev/?v=${V}/g"
+          grep -c "?v=${V}" index.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

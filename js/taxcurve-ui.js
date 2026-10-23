@@ -1,6 +1,6 @@
 // Editable income tax bracket chart.
-import { baseSchedule, decodeSchedule, encodeSchedule, marginal, taxAt, mapThreshold, liabilityChange, BASE_CODE } from "./taxcurve.js";
-import { fmt } from "./model.js";
+import { baseSchedule, decodeSchedule, encodeSchedule, marginal, taxAt, mapThreshold, liabilityChange, BASE_CODE } from "./taxcurve.js?v=dev";
+import { fmt } from "./model.js?v=dev";
 
 const NS = "http://www.w3.org/2000/svg";
 const svgEl = (tag, attrs = {}, parent) => {
@@ -302,7 +302,7 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
 }
 
 // 2026 -> 2023 threshold mapping for the "who pays" table (mirrors taxcurve.js).
-import { THRESH_2026 } from "./taxcurve.js";
+import { THRESH_2026 } from "./taxcurve.js?v=dev";
 function to2023(t, st, tc) {
   const A = THRESH_2026[st], Z = tc.thresholds[st];
   for (let k = 1; k < A.length; k++) if (t <= A[k]) return Z[k - 1] + ((t - A[k - 1]) / (A[k] - A[k - 1])) * (Z[k] - Z[k - 1]);

@@ -1,6 +1,6 @@
-import { GROUPS, LEVERS, leverById, scoreAll, tenYear } from "./levers.js";
-import { fmt } from "./model.js";
-import { curveEditor } from "./taxcurve-ui.js";
+import { GROUPS, LEVERS, leverById, scoreAll, tenYear } from "./levers.js?v=dev";
+import { fmt } from "./model.js?v=dev";
+import { curveEditor } from "./taxcurve-ui.js?v=dev";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {

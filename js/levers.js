@@ -1,4 +1,4 @@
-import { buildDistribution, liabilityChange, decodeSchedule, BASE_CODE, DEFAULT_ETI } from "./taxcurve.js";
+import { buildDistribution, liabilityChange, decodeSchedule, BASE_CODE, DEFAULT_ETI } from "./taxcurve.js?v=dev";
 
 // Revenue levers: what each one does, where its estimate comes from, and how it's scored.
 //

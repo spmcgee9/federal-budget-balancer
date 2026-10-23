@@ -1,7 +1,7 @@
-import { project, summarize } from "./projection.js";
-import { lineChart, stackChart } from "./charts.js";
-import { fmt } from "./model.js";
-import { revenueScores } from "./revenue-ui.js";
+import { project, summarize } from "./projection.js?v=dev";
+import { lineChart, stackChart } from "./charts.js?v=dev";
+import { fmt } from "./model.js?v=dev";
+import { revenueScores } from "./revenue-ui.js?v=dev";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -41,7 +41,11 @@ export function initProjections(projData, budgetModel, changed) {
     const a = el("a", "", s.name); a.href = s.url; a.target = "_blank"; a.rel = "noopener";
     src.append(a, document.createTextNode(i < P.meta.sources.length - 1 ? "; " : "."));
   });
-  buildAssumptions();
+  try { buildAssumptions(); } catch (err) {
+    console.error(err);
+    const box = $("#assumptions-body");
+    if (box) box.textContent = "The assumption settings couldn't load in this browser (" + err.message + ").";
+  }
   let w = 0;
   new ResizeObserver(() => {
     const nw = $("[data-panel=projections]").clientWidth;
