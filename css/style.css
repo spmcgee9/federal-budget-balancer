@@ -44,6 +44,8 @@ button { font: inherit; color: inherit; }
 /* masthead */
 .masthead { padding: 22px 0 10px; }
 .masthead h1 { font: 700 30px/1.1 var(--serif); margin: 0 0 4px; letter-spacing: -0.01em; }
+/* Drawn flag rather than the emoji, which Windows shows as the letters "US". */
+.masthead h1 .flag { height: 0.72em; width: auto; aspect-ratio: 1.9; margin-right: 0.35em; vertical-align: 0.02em; border-radius: 2px; display: inline-block; }
 .tagline { margin: 0; color: var(--muted); max-width: 640px; }
 
 /* scoreboard */
@@ -425,7 +427,7 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
 
 /* phones */
 @media (max-width: 640px) {
-  .masthead h1 { font-size: 25px; }
+  .masthead h1 { font-size: clamp(19px, 6.1vw, 25px); }
   .start-over { padding: 5px 10px; font-size: 13px; }
   .scoreboard { padding: 6px 0 6px; }
   .score-grid { grid-template-columns: 1fr 1fr; gap: 0 12px; }
