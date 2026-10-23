@@ -1,5 +1,6 @@
 import { GROUPS, LEVERS, leverById, scoreAll, tenYear } from "./levers.js";
 import { fmt } from "./model.js";
+import { curveEditor } from "./taxcurve-ui.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -72,7 +73,29 @@ function summaryBox() {
   return s;
 }
 
+function curveRow(L) {
+  const row = el("div", "lever lever-curve");
+  row.dataset.id = L.id;
+  const top = el("div", "lever-top");
+  const name = el("button", "name", L.name);
+  name.addEventListener("click", () => openLever(L));
+  const info = el("button", "info", "?");
+  info.title = "What is this?";
+  info.addEventListener("click", () => openLever(L));
+  top.append(name, info);
+  const editor = curveEditor(L, {
+    get: () => valueOf(L),
+    set: (code) => set(L, code),
+    scorePath: () => scoreAll(ctx, model).byId[L.id] || ctx.zero(),
+    ctx,
+  });
+  row.append(top, editor);
+  rows.set(L.id, { row, L, editor, curve: true });
+  return row;
+}
+
 function leverRow(L) {
+  if (L.control.type === "curve") return curveRow(L);
   const row = el("div", "lever");
   row.dataset.id = L.id;
   const top = el("div", "lever-top");
@@ -129,6 +152,7 @@ export function updateRevenue() {
   const sc = scoreAll(ctx, model);
   const i = ctx.Y.indexOf(model.fy);
   for (const [id, p] of rows) {
+    if (p.curve) { p.row.classList.toggle("changed", isChanged(p.L)); p.editor.update(); continue; }
     const L = p.L, v = valueOf(L), c = L.control;
     if (c.type === "slider") {
       if (document.activeElement !== p.input) p.input.value = v;
@@ -177,7 +201,7 @@ export function openLever(L) {
   const v = valueOf(L);
   const facts = [];
   const tenNow = tenYear(ctx, L, v);
-  facts.push(["Setting", L.control.type === "select" ? L.control.options.find((o) => o.v === v)?.label : L.control.type === "toggle" ? (v ? "On" : "Off") : L.control.fmt(v)]);
+  facts.push(["Setting", settingText(L, v)]);
   if (isChanged(L)) facts.push(["10-year effect", `${money(tenNow, { sign: true })} (${model.fy}–${model.fy + 9}, at full strength)`]);
   facts.push(["Estimate source", L.source?.name || "—"]);
   if (L.source?.detail) facts.push(["Calibration", L.source.detail]);
@@ -205,8 +229,15 @@ export function revenueChanges() {
     const path = sc.byId[id] || [];
     const ten = path.reduce((s, x, k) => s + (ctx.Y[k] >= model.fy && ctx.Y[k] < model.fy + 10 ? x : 0), 0);
     const v = valueOf(L);
-    const what = L.control.type === "select" ? L.control.options.find((o) => o.v === v)?.label
-      : L.control.type === "toggle" ? (v ? "On" : "Off") : L.control.fmt(v);
+    const what = settingText(L, v);
     return { L, fy: path[i] || 0, ten, what, ph: model.revPh.has(id) ? model.revPh.get(id) : model.phase };
   }).filter(Boolean);
+}
+
+function settingText(L, v) {
+  const c = L.control;
+  if (c.type === "curve") return v === c.def ? "Current law" : "Custom brackets";
+  if (c.type === "select") return c.options.find((o) => o.v === v)?.label;
+  if (c.type === "toggle") return v ? "On" : "Off";
+  return c.fmt(v);
 }

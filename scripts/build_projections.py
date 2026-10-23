@@ -127,7 +127,8 @@ def ltbo_econ(path):
     hi2, ycols2 = year_header(lv)
     price = series_by_label(lv, ycols2, r"^gdp price", hi2)
     wages = series_by_label(lv, ycols2, r"wage and salary disbursements", hi2)
-    return rate, ten, pop, price, capshare, wages
+    gdp_cy = series_by_label(lv, ycols2, r"^nominal gdp", hi2)
+    return rate, ten, pop, price, capshare, wages, gdp_cy
 
 
 def pb_effects(path):
@@ -173,7 +174,7 @@ def main():
     a = ap.parse_args()
 
     lt = ltbo_budget(find(a.dir, "*LTBO-Budget*.xlsx"))
-    rate, ten, pop, price, capshare, wages = ltbo_econ(find(a.dir, "*LTBO-econ*.xlsx"))
+    rate, ten, pop, price, capshare, wages, gdp_cy = ltbo_econ(find(a.dir, "*LTBO-econ*.xlsx"))
     mand, dd, nd, disc_pb_pct = pb_effects(find(a.dir, "*62385*data*.xlsx"))
     demo = demographics(find(a.dir, "*61879*.xlsx"))
     check, worst = check_10yr(find(a.dir, "*Budget-Projections*.xlsx"), lt)
@@ -232,6 +233,7 @@ def main():
         "pb": {"mand": pb_mand, "dd": pb_dd, "nd": pb_nd},     # CBO estimate of President's proposals
         "tariff": tariff,                                     # customs revenue lost vs. Feb baseline
         "pop": [round(pop[y], 2) for y in years] if pop else None,
+        "gdpCY2023": round(gdp_cy[2023] * 1000, 1),                # calendar-2023 nominal GDP, $B (for IRS 2023 data)
         "wages": [round(wages[y] * 1000, 1) for y in years],      # wage and salary disbursements, $B (calendar year)
         "capShare": [round(capshare[y], 3) for y in years],      # % of earnings below the Social Security taxable maximum
         "demo": {"years": sorted(demo), "groups": ["24 or younger", "25 to 54", "55 to 64", "65 or older", "Total"],

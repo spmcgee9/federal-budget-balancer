@@ -1,3 +1,5 @@
+import { buildDistribution, liabilityChange, decodeSchedule, BASE_CODE, DEFAULT_ETI } from "./taxcurve.js";
+
 // Revenue levers: what each one does, where its estimate comes from, and how it's scored.
 //
 // Scoring is "conventional," like CBO's and JCT's official estimates: it includes ordinary behavioral
@@ -23,7 +25,7 @@ function gdpPath(ctx, S10) {
 const damp = (x, k) => x * (1 - k * x);
 
 export const GROUPS = [
-  { id: "ind", name: "Individual income tax", note: "Rates on wages, salaries, and business income. Phase 4 replaces these with an editable tax-rate curve." },
+  { id: "ind", name: "Individual income tax", note: "Rates on wages, salaries, and business income (capital gains are taxed separately, below)." },
   { id: "cap", name: "Capital gains and investment income" },
   { id: "corp", name: "Corporate income tax" },
   { id: "pay", name: "Payroll taxes", note: "Social Security and Medicare taxes on wages. Paid half by workers and half by employers." },
@@ -36,20 +38,6 @@ export const GROUPS = [
 
 export const LEVERS = [
   // ---------- individual income tax ----------
-  {
-    id: "ind_all", group: "ind", name: "Change every income tax bracket",
-    control: { type: "slider", min: -5, max: 5, step: 0.5, def: 0, fmt: (v) => (v > 0 ? "+" : "") + v + " pts" },
-    desc: "Raises or lowers all seven individual income tax rates (10% through 37%) by the same number of percentage points. Affects nearly every taxpayer.",
-    source: { ...CRFB_OLD, detail: "$1.2 trillion per percentage point, 2026–2035" },
-    score: (v, ctx) => gdpPath(ctx, damp(v, 0.02) * 1200),
-  },
-  {
-    id: "ind_top", group: "ind", name: "Change the top four brackets (24% to 37%)",
-    control: { type: "slider", min: -5, max: 10, step: 0.5, def: 0, fmt: (v) => (v > 0 ? "+" : "") + v + " pts" },
-    desc: "Raises or lowers the 24%, 32%, 35%, and 37% brackets, which apply to taxable income above roughly $100,000 for single filers ($200,000 married).",
-    source: { ...CRFB_OLD, detail: "$300 billion per percentage point, 2026–2035" },
-    score: (v, ctx) => gdpPath(ctx, damp(v, 0.025) * 300),
-  },
   {
     id: "ind_surtax", group: "ind", name: "Surtax on income above $100,000 ($200,000 married)",
     control: { type: "slider", min: 0, max: 10, step: 0.5, def: 0, fmt: (v) => v + "%" },
@@ -236,8 +224,8 @@ export function leverById(id) {
   return LEVERS.find((l) => l.id === id);
 }
 
-export function addLevers(extra) {
-  for (const l of extra) if (!leverById(l.id)) LEVERS.push(l);
+export function addLevers(extra, { front = false } = {}) {
+  for (const l of extra) if (!leverById(l.id)) (front ? LEVERS.unshift(l) : LEVERS.push(l));
 }
 
 // Score every active lever, applying each one's phase-in.
@@ -284,4 +272,34 @@ export function taxBreakLevers(tb) {
       });
     },
   }));
+}
+
+// The editable income tax curve (Phase 4). Value = the schedule, encoded (see taxcurve.js).
+// Scored from IRS 2023 data; the 2023 change is grown with GDP and multiplied by a calibration factor
+// (0.85) so a 1-point increase in every bracket matches CBO's estimate for that option.
+export const CURVE_CALIBRATION = 0.85;
+export function taxCurveLever(tc) {
+  const dist = buildDistribution(tc);
+  const cache = new Map();
+  const delta2023 = (code, eti) => {
+    const key = code + "|" + eti;
+    if (!cache.has(key)) {
+      const s = decodeSchedule(code);
+      cache.set(key, s ? liabilityChange(dist, s, { eti }).delta / 1e9 : 0);
+      if (cache.size > 200) cache.delete(cache.keys().next().value);
+    }
+    return cache.get(key);
+  };
+  return {
+    id: "itax", group: "ind", name: "Income tax brackets",
+    control: { type: "curve", def: BASE_CODE },
+    dist, tc,
+    desc: "Edit the brackets: each point starts a bracket, and the rate applies to taxable income above it until the next point. The chart is for single filers; married couples' thresholds follow current law's relationship (about double). Revenue is computed from IRS data on how much taxable income falls at each level, including a moderate behavioral response: people report less taxable income when rates rise (an elasticity of taxable income of 0.25).",
+    source: { name: tc.source, url: tc.url, detail: "Changes in 2023 tax are grown with GDP and scaled by 0.85, which makes a 1-point increase in every bracket match CBO's estimate ($1.2 trillion over 10 years)." },
+    score: (v, ctx) => {
+      if (!v || v === BASE_CODE) return ctx.zero();
+      const d = delta2023(v, ctx.eti ?? DEFAULT_ETI) * CURVE_CALIBRATION;
+      return ctx.P.gdp.map((g, i) => (ctx.Y[i] < ctx.start ? 0 : (d * g) / ctx.P.gdpCY2023));
+    },
+  };
 }

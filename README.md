@@ -38,11 +38,21 @@ The **Revenue** tab has levers for individual income tax brackets and a surtax, 
 - Levers are added independently; interactions between them aren't modeled.
 - **Phase-in:** every change, spending or revenue, can take effect immediately or ramp in over 3, 5, or 10 years (a plan-wide default, with a per-item override in its "What is this?" panel).
 
+## Income tax curve (Phase 4)
+
+At the top of the Revenue tab, an editable chart of income tax brackets for single filers (log scale, $5K to $10M of taxable income). Drag a point up or down to change a bracket's rate, sideways to move where it starts; add or remove brackets; or type exact values in the table. Married couples' thresholds follow current law's relationship (about double). The chart also shows your average tax rate, and a "who pays" table spreads the change across income groups.
+
+- Revenue is computed from IRS Statistics of Income data (tax year 2023, Table 3.4): taxable income taxed at each rate, by filing status, rebuilt into a distribution of taxable income (power-law within each bracket). Current law reproduces IRS's ordinary-rate tax exactly.
+- Behavioral response: an elasticity of taxable income of 0.25 (income reported at each level changes with the after-tax share of an extra dollar).
+- The 2023 change is grown with GDP and multiplied by 0.85, so a 1-point increase in every bracket matches CBO's estimate ($1.2 trillion over 10 years).
+- The "who pays" table (IRS Table 1.1) is approximate: it uses each income group's average taxable income, before behavioral responses.
+
 ## Data
 
 - `data/budget.json`: OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Built by `scripts/build_data.py`.
 - `data/projections.json`: CBO projections, in billions of dollars. Built by `scripts/build_projections.py`.
 - `data/tax_breaks.json`: OMB tax expenditure estimates for the tax-break levers. Built by `scripts/build_tax_breaks.py --file ap_10_tables_fy2027.xlsx` (from the Analytical Perspectives page).
+- `data/taxcurve.json`: IRS income distribution for the tax curve. Built by `scripts/build_taxcurve.py --t34 23in34tr.xls --t11 23in11si.xls` (needs `pip install xlrd`).
 - `data/descriptions.json`: plain-language descriptions, search keywords, and internal-transfer rules. Edit by hand.
 
 ### Rebuilding the spending data
@@ -92,7 +102,7 @@ Then visit http://localhost:8000.
 1. ✅ Spending tree, controls, mandatory lock, descriptions, change summary, share links
 2. ✅ Projections: 10-, 20-, and 30-year deficits and debt ($, today's $, % of GDP), interest calculated from your plan, debt payoff year
 3. ✅ Revenue levers (income, capital gains, corporate, payroll, estate, excise, tariffs, new taxes, tax breaks) and phase-ins
-4. Editable income-tax curve calibrated to IRS income data
+4. ✅ Editable income-tax curve calibrated to IRS income data
 5. Economic assumptions (growth, interest rates, OMB vs. CBO forecasts) and behavioral response settings
 6. Proposed new programs (universal health care, universal pre-K, UBI, free college…)
 
