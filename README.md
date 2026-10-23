@@ -144,6 +144,10 @@ Then visit http://localhost:8000.
 
 Built by Sean McGee ([github.com/spmcgee9](https://github.com/spmcgee9), smcgee.dev@gmail.com). Coded with the assistance of Claude, an AI model made by Anthropic. See `about.html` for methodology, sources, and limitations.
 
+## License
+
+[MIT](LICENSE) © 2026 Sean McGee. The underlying budget data come from U.S. government sources (OMB, CBO, IRS) and are in the public domain; cost estimates from other organizations are cited to their sources.
+
 ## Caveats
 
 This is a simplified, static model: it does not estimate how spending or tax changes would affect economic growth, and a percentage change is applied to an account's whole amount. It is meant for exploring trade-offs, not for official scoring.
