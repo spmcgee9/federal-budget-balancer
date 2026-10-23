@@ -390,6 +390,7 @@ export class BudgetModel {
     this.propPh.clear();
     this.phase = 0;
     this.assume = { ...ASSUME_DEFAULTS };
+    this.mandatoryUnlocked = false; // a link without "m1" means mandatory programs are locked
     for (const p of str.split(";").slice(1)) {
       if (p.startsWith("a.")) {
         const [k, raw] = p.slice(2).split("=");

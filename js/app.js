@@ -1,8 +1,9 @@
-import { BudgetModel, fmt, fmtPct } from "./model.js?v=dev";
+import { BudgetModel, fmt, fmtPct, ASSUME_DEFAULTS } from "./model.js?v=dev";
 import { initProjections, render as renderProjections } from "./projections-ui.js?v=dev";
-import { makeCtx, scoreAll, addLevers, taxBreakLevers, taxCurveLever } from "./levers.js?v=dev";
+import { makeCtx, scoreAll, addLevers, taxBreakLevers, taxCurveLever, leverById } from "./levers.js?v=dev";
 import { initRevenue, renderRevenue, updateRevenue, revenueChanges, PHASES } from "./revenue-ui.js?v=dev";
-import { initProposals, scoreProposals } from "./proposals.js?v=dev";
+import { initProposals, scoreProposals, proposalById } from "./proposals.js?v=dev";
+import { decodeSchedule } from "./taxcurve.js?v=dev";
 import { initProposalsUI, renderProposals, updateProposals, proposalChanges } from "./proposals-ui.js?v=dev";
 import { initSimple, renderSimple, updateSimple } from "./simple-ui.js?v=dev";
 
@@ -27,15 +28,44 @@ const LOCK_TEXT = {
   offset: "Offsetting receipts: money the government collects that is netted against spending. Not a spending program, so it's locked.",
 };
 
+function loadFailed(msg) {
+  const b = document.getElementById("err-banner");
+  if (b) { b.hidden = false; b.textContent = msg; }
+  const m = document.getElementById("loading-msg");
+  if (m) m.textContent = "The tool couldn't load. Reload the page to try again.";
+}
+
 async function init() {
-  const [data, desc, proj, breaks, tcData, props] = await Promise.all([
-    fetch("data/budget.json?v=dev").then((r) => r.json()),
-    fetch("data/descriptions.json?v=dev").then((r) => r.json()).catch(() => null),
-    fetch("data/projections.json?v=dev").then((r) => r.json()).catch(() => null),
-    fetch("data/tax_breaks.json?v=dev").then((r) => r.json()).catch(() => null),
-    fetch("data/taxcurve.json?v=dev").then((r) => r.json()).catch(() => null),
-    fetch("data/proposals.json?v=dev").then((r) => r.json()).catch(() => null),
+  // Fetch a data file; a bad response (404, an HTML error page) counts as a failure, retried once.
+  const getJSON = async (url, tries = 2) => {
+    for (let k = 1; ; k++) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`${url.split("?")[0]} (${r.status})`);
+        return await r.json();
+      } catch (err) {
+        if (k >= tries) throw err;
+        await new Promise((res) => setTimeout(res, 800));
+      }
+    }
+  };
+  const optional = (url) => getJSON(url).catch((err) => { console.warn(err); return null; });
+  let data;
+  const [budget, desc, proj, breaks, tcData, props] = await Promise.all([
+    getJSON("data/budget.json?v=dev").catch(() => null),
+    optional("data/descriptions.json?v=dev"),
+    optional("data/projections.json?v=dev"),
+    optional("data/tax_breaks.json?v=dev"),
+    optional("data/taxcurve.json?v=dev"),
+    optional("data/proposals.json?v=dev"),
   ]);
+  data = budget;
+  // The spending data and the projections are both required (Simple mode and the revenue levers use the projections).
+  if (!data || !Array.isArray(data.tree) || !proj) {
+    loadFailed("The budget data couldn't be downloaded. Check your connection and reload the page.");
+    $("#simple").hidden = true;
+    return;
+  }
   if (props) initProposals(props, breaks);
   if (tcData) addLevers([taxCurveLever(tcData)], { front: true });
   if (breaks) addLevers(taxBreakLevers(breaks));
@@ -56,8 +86,7 @@ async function init() {
   document.querySelectorAll("[data-src]").forEach((e) => (e.href = model.meta.sourceUrls?.[0] || "#"));
   $("#gen").textContent = `Data built ${model.meta.generated}.`;
 
-  if (location.hash.length > 1) model.decode(decodeURIComponent(location.hash.slice(1)));
-  model.recompute();
+  readHash();
   $("#mand-toggle").checked = model.mandatoryUnlocked;
   $("#phase-global").value = String(model.phase);
 
@@ -68,6 +97,7 @@ async function init() {
   setMode(mode, { initial: true });
   refresh();
   wire();
+  document.body.classList.remove("loading");
 }
 
 // ---------- tree ----------
@@ -301,6 +331,71 @@ function scheduleProjections() {
 }
 
 let commitTimer;
+// ---------- share links ----------
+// Load the plan in the URL. Links can be typed, truncated, or edited by hand, so every value is
+// checked against what the controls allow; anything unreadable is dropped rather than shown as NaN.
+function readHash() {
+  let raw = location.hash.slice(1);
+  if (!raw) { model.recompute(); return; }
+  let ok = false;
+  try { raw = decodeURIComponent(raw); ok = model.decode(raw); } catch (err) { console.warn("share link", err); ok = false; }
+  if (ok) ok = sanitizePlan() !== false;
+  if (!ok) {
+    model.resetAll();
+    setTimeout(() => toast("That share link couldn't be read, so this is the President's budget.", { ms: 6000 }), 0);
+  }
+  model.recompute();
+}
+
+const PHASE_SET = new Set(PHASES.map(([v]) => v));
+const RANGES = { dg: [-1, 1], dr: [-2, 2], eti: [0, 0.6], real: [50, 100] };
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function sanitizePlan() {
+  let dropped = 0;
+  for (const [id, st] of model.settings) {
+    if (!Number.isFinite(st.pct)) { model.settings.delete(id); dropped++; continue; }
+    st.pct = clamp(st.pct, -100, 1000);
+    if (st.ph != null && !PHASE_SET.has(st.ph)) delete st.ph;
+  }
+  for (const [id, v] of model.rev) {
+    const L = leverById(id), c = L && L.control;
+    let keep = !!c;
+    if (c && c.type === "slider") keep = typeof v === "number" && Number.isFinite(v) && (model.rev.set(id, clamp(v, c.min, c.max)), true);
+    else if (c && c.type === "toggle") keep = typeof v === "boolean";
+    else if (c && c.type === "select") keep = c.options.some((o) => String(o.v) === String(v)) && (model.rev.set(id, String(v)), true);
+    else if (c && c.type === "curve") { const sch = decodeSchedule(String(v)); keep = !!sch && sch.length <= 20; }
+    if (!keep) { model.rev.delete(id); model.revPh.delete(id); dropped++; }
+  }
+  for (const [id, ph] of model.revPh) if (!model.rev.has(id) || !PHASE_SET.has(ph)) model.revPh.delete(id);
+  for (const [id, v] of model.prop) {
+    const P = proposalById(id);
+    if (!P) { model.prop.delete(id); model.propPh.delete(id); dropped++; continue; }
+    const keys = (P.options || []).map((o) => o.key);
+    if (keys.length && !keys.includes(v.opt)) v.opt = keys.includes("mid") ? "mid" : keys[0];
+    if (P.amount) v.amt = Number.isFinite(v.amt) ? clamp(v.amt, P.amount.min, P.amount.max) : P.amount.def;
+    else delete v.amt;
+  }
+  for (const [id, ph] of model.propPh) if (!model.prop.has(id) || !(PHASE_SET.has(ph) || ph === proposalById(id).phase)) model.propPh.delete(id);
+  const a = model.assume;
+  if (!["cbo", "omb"].includes(a.fc)) a.fc = ASSUME_DEFAULTS.fc;
+  for (const [k, [lo, hi]] of Object.entries(RANGES)) a[k] = Number.isFinite(a[k]) ? clamp(a[k], lo, hi) : ASSUME_DEFAULTS[k];
+  a.fb = a.fb === true;
+  if (!PHASE_SET.has(model.phase)) model.phase = 0;
+  if (dropped) console.warn(`Share link: ignored ${dropped} unreadable setting(s).`);
+  return true;
+}
+
+// Pasting a different share link into an open tab changes only the hash; load it without a reload.
+function onHashChange() {
+  const cur = model.isDefault() ? "" : "#" + model.encode();
+  if (location.hash === cur || (location.hash === "#" && !cur)) return;
+  readHash();
+  $("#mand-toggle").checked = model.mandatoryUnlocked;
+  $("#phase-global").value = String(model.phase);
+  rebuildViews();
+}
+
 function commit() {
   clearTimeout(commitTimer);
   commitTimer = setTimeout(() => {
@@ -544,6 +639,7 @@ function openDrawerShell({ path, title, desc, muted = false, facts = [], links =
     for (const [n, label] of PHASES) { const o = el("option", "", label); o.value = String(n); sel.append(o); }
     sel.value = phase.value == null ? "" : String(phase.value);
   }
+  if ($("#drawer").hidden) drawerOpener = document.activeElement;
   $("#drawer").hidden = false;
   $("#drawer-close").focus();
 }
@@ -658,6 +754,13 @@ function toast(msg, { undo = false, ms = 2400 } = {}) {
 
 // Start over: back to the President's budget, with a few seconds to undo instead of a confirm dialog.
 let undoState = null;
+let drawerOpener = null;
+// Close the "What is this?" panel and put keyboard focus back where it was.
+function closeDrawer() {
+  $("#drawer").hidden = true;
+  if (drawerOpener && document.contains(drawerOpener)) drawerOpener.focus();
+  drawerOpener = null;
+}
 function startOver() {
   if (model.isDefault()) return;
   undoState = model.encode();
@@ -680,6 +783,7 @@ function rebuildViews() {
 
 function wire() {
   tabFades();
+  window.addEventListener("hashchange", onHashChange);
   document.querySelectorAll("[role=tab]").forEach((b) => b.addEventListener("click", () => selectTab(b.dataset.tab)));
   $("#mand-toggle").addEventListener("change", (e) => {
     model.setMandatoryUnlocked(e.target.checked);
@@ -697,9 +801,20 @@ function wire() {
     const v = e.target.value;
     drawerPhaseSet?.(v === "" ? null : +v);
   });
-  $("#drawer-close").addEventListener("click", () => ($("#drawer").hidden = true));
-  $("#drawer").addEventListener("click", (e) => { if (e.target.id === "drawer") $("#drawer").hidden = true; });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#drawer").hidden = true; });
+  $("#drawer-close").addEventListener("click", closeDrawer);
+  $("#drawer").addEventListener("click", (e) => { if (e.target.id === "drawer") closeDrawer(); });
+  document.addEventListener("keydown", (e) => {
+    if ($("#drawer").hidden) return;
+    if (e.key === "Escape") closeDrawer();
+    // Keep keyboard focus inside the open panel.
+    if (e.key === "Tab") {
+      const f = [...$("#drawer").querySelectorAll("button, a[href], select, input, [tabindex]:not([tabindex='-1'])")].filter((x) => x.offsetParent);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
   $("#start-over").addEventListener("click", startOver);
   $("#toast-undo").addEventListener("click", () => {
     if (!undoState) return;
@@ -723,5 +838,6 @@ function wire() {
 
 init().catch((err) => {
   console.error(err);
-  $("#tree").innerHTML = `<p class="empty">Couldn't load the budget data (${err.message}). If you opened this file directly, serve the folder instead: <code>python -m http.server</code>.</p>`;
+  const local = location.protocol === "file:" ? " If you opened the file directly, serve the folder instead (python -m http.server)." : "";
+  loadFailed(`The tool couldn't start (${err.message}). Try reloading the page.${local}`);
 });

@@ -4,6 +4,8 @@ import { fmt } from "./model.js?v=dev";
 import { revenueScores } from "./revenue-ui.js?v=dev";
 import { proposalScores } from "./proposals-ui.js?v=dev";
 
+// Whole percents with thousands separators (an extreme plan can reach 20,000% of GDP).
+const pctN = (v) => Math.round(v).toLocaleString("en-US");
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -67,11 +69,11 @@ function conv(v, i) {
 const money = (b) => fmt(b * 1000);
 function fmtU(v) {
   if (v == null || !Number.isFinite(v)) return "—";
-  if (state.units === "gdp") return (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v)) + "%";
+  if (state.units === "gdp") return (Math.abs(v) < 10 ? v.toFixed(1) : pctN(v)) + "%";
   return money(v);
 }
 function fmtTick(v) {
-  if (state.units === "gdp") return v + "%";
+  if (state.units === "gdp") return v.toLocaleString("en-US") + "%";
   const a = Math.abs(v);
   const s = a === 0 ? "$0" : a >= 1000 ? "$" + +(a / 1000).toFixed(1) + "T" : "$" + Math.round(a) + "B";
   return (v < 0 ? "−" : "") + s;
@@ -155,8 +157,8 @@ function headline(res, sum) {
     box.append(tag, document.createTextNode(" "));
   }
   if (!changed) {
-    add(`Under the President's budget, ${model.assume.fc === "omb" ? "with OMB's economic forecast" : "as estimated by CBO"}, debt held by the public grows from ${Math.round(today)}% of GDP today to `);
-    add(`${Math.round(b.d30.pct)}% in ${L}`, "add");
+    add(`Under the President's budget, ${model.assume.fc === "omb" ? "with OMB's economic forecast" : "as estimated by CBO"}, debt held by the public grows from ${pctN(today)}% of GDP today to `);
+    add(`${pctN(b.d30.pct)}% in ${L}`, "add");
     add(`, and interest reaches ${money(b.intLast)} a year. Make changes on the Spending, Revenue, and Proposals tabs to see how your plan compares.`);
     return;
   }
@@ -164,11 +166,11 @@ function headline(res, sum) {
   if (cut10 >= 0) { add("Your plan cuts deficits by "); add(money(cut10), "cut"); add(" over the next 10 years. "); }
   else { add("Your plan adds "); add(money(-cut10), "add"); add(" to deficits over the next 10 years. "); }
   if (m.d30.debt <= 0) {
-    add(`By ${L} the debt is gone and the government holds net assets worth ${Math.round(-m.d30.pct)}% of GDP, instead of debt of ${Math.round(b.d30.pct)}%`);
+    add(`By ${L} the debt is gone and the government holds net assets worth ${pctN(-m.d30.pct)}% of GDP, instead of debt of ${pctN(b.d30.pct)}%`);
   } else {
     add(`In ${L}, debt is `);
-    add(`${Math.round(m.d30.pct)}% of GDP`, m.d30.pct <= b.d30.pct ? "cut" : "add");
-    add(` instead of ${Math.round(b.d30.pct)}%`);
+    add(`${pctN(m.d30.pct)}% of GDP`, m.d30.pct <= b.d30.pct ? "cut" : "add");
+    add(` instead of ${pctN(b.d30.pct)}%`);
   }
   const di = b.intLast - m.intLast;
   if (m.intLast < 0) add(`, and the government earns ${money(-m.intLast)} a year in interest instead of paying ${money(b.intLast)}`);
@@ -201,7 +203,7 @@ function kpis(res, sum) {
       continue;
     }
     card(`Debt in ${yr}`, fmtU(show(mm)), fmtU(show(bb)), same ? null : mm.debt < bb.debt,
-      same ? `${Math.round(mm.pct)}% of GDP · same as the President's budget` : `President's budget: ${fmtU(show(bb))}`);
+      same ? `${pctN(mm.pct)}% of GDP · same as the President's budget` : `President's budget: ${fmtU(show(bb))}`);
   }
   const same10 = Math.abs(m.cum10 - b.cum10) < 1;
   if (m.cum10 >= 0) card(`Total deficits, ${s}–${s + 9}`, money(m.cum10), money(b.cum10), same10 ? null : m.cum10 < b.cum10);
@@ -210,7 +212,7 @@ function kpis(res, sum) {
   if (p) card("Debt paid off", String(p.year), null, true, p.extrapolated ? "extrapolated past 2056" : "within CBO's 30-year horizon");
   else if (m.firstSurplus) card("First surplus", String(m.firstSurplus), null, true, "debt not paid off by 2150");
   else card("Debt peaks", m.peak.year === Y[Y.length - 1] ? "Still rising" : String(m.peak.year), null, null,
-    m.peak.year === Y[Y.length - 1] ? `${Math.round(m.peak.pct)}% of GDP in ${m.peak.year} and climbing` : `at ${Math.round(m.peak.pct)}% of GDP`);
+    m.peak.year === Y[Y.length - 1] ? `${pctN(m.peak.pct)}% of GDP in ${m.peak.year} and climbing` : `at ${pctN(m.peak.pct)}% of GDP`);
 }
 
 function demoChart() {

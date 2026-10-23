@@ -73,6 +73,8 @@ export function project(P, plan = {}) {
   const drBase = Y.map((y, i) => (y < start ? 0 : ((A.dr || 0) + (A.fc === "omb" ? P.omb.dr[i] : 0)) * roll(y)));
   const MAND_ELASTICITY = 0.4;  // mandatory spending rises 0.4% for each 1% of extra GDP (benefits partly tied to wages and prices)
   const FEEDBACK_BP = 2;        // basis points of interest per percentage point of debt-to-GDP above CBO's path
+  const FEEDBACK_CAP = 0.03;    // at most +3 points: the estimates behind the 2 bp rule only cover moderate debt changes,
+                                // and without a cap an extreme plan spirals to infinity
 
   const track = (withPlan) => {
     let X = 0; // debt above CBO current law
@@ -92,7 +94,7 @@ export function project(P, plan = {}) {
       // discretionary spending is set in dollars by Congress, so it doesn't change.
       const econE = -revTot * g + MAND_ELASTICITY * mandTot * g;
       const e = pbE + tar + uS - uR + econE;   // added to the primary deficit vs. current law
-      const fbShift = A.fb && Y[i] >= start ? (FEEDBACK_BP / 1e4) * prevRatioGap : 0;
+      const fbShift = A.fb && Y[i] >= start ? Math.max(-FEEDBACK_CAP, Math.min(FEEDBACK_CAP, (FEEDBACK_BP / 1e4) * prevRatioGap)) : 0;
       const dr = drBase[i] / 100 + fbShift;
       const debtPrev = (i > 0 ? b.debt[i - 1] : b.debt[0] + b.deficit[0]) + X;
       // Interest on the extra debt at CBO's rate, plus any rate change applied to all debt.

@@ -9,13 +9,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=dev">
+  <!-- Start every download at once instead of discovering files one import at a time. -->
+  <link rel="preload" href="data/budget.json?v=dev" as="fetch" crossorigin>
+  <link rel="preload" href="data/projections.json?v=dev" as="fetch" crossorigin>
+  <link rel="modulepreload" href="js/app.js?v=dev">
+  <link rel="modulepreload" href="js/model.js?v=dev">
+  <link rel="modulepreload" href="js/projections-ui.js?v=dev">
+  <link rel="modulepreload" href="js/projection.js?v=dev">
+  <link rel="modulepreload" href="js/charts.js?v=dev">
+  <link rel="modulepreload" href="js/levers.js?v=dev">
+  <link rel="modulepreload" href="js/revenue-ui.js?v=dev">
+  <link rel="modulepreload" href="js/proposals.js?v=dev">
+  <link rel="modulepreload" href="js/proposals-ui.js?v=dev">
+  <link rel="modulepreload" href="js/simple-ui.js?v=dev">
+  <link rel="modulepreload" href="js/taxcurve.js?v=dev">
+  <link rel="modulepreload" href="js/taxcurve-ui.js?v=dev">
 </head>
-<body>
+<body class="loading">
   <header class="masthead">
     <div class="wrap masthead-row">
       <div class="brand">
         <h1>US Federal Budget Balancer</h1>
-        <p class="tagline">Start from the President's <span data-fy>FY</span> budget. Cut it, grow it, or zero it out, and see what happens to the deficit.</p>
+        <p class="tagline">Start from the President's <span data-fy>FY2027</span> budget. Cut it, grow it, or zero it out, and see what happens to the deficit.</p>
       </div>
       <div class="masthead-actions">
         <div class="seg-ctl mode-ctl" role="group" aria-label="Detail level" id="mode-ctl">
@@ -65,6 +80,7 @@
   </section>
 
   <main class="wrap">
+    <p class="loading-msg" id="loading-msg" role="status">Loading the President's budget…</p>
     <section id="simple" class="simple" hidden></section>
     <div class="toolbar">
       <nav class="tabs" role="tablist">
@@ -86,6 +102,7 @@
     </div>
 
     <section data-panel="spending">
+      <h2 class="sr-only">Spending</h2>
       <div class="controls-bar">
         <label class="switch-line" title="Mandatory spending is set by existing law rather than yearly appropriations">
           <input type="checkbox" id="mand-toggle" class="switch">
@@ -105,14 +122,17 @@
     </section>
 
     <section data-panel="revenue" hidden>
+      <h2 class="sr-only">Revenue</h2>
       <div id="revenue"></div>
     </section>
 
     <section data-panel="proposals" hidden>
+      <h2 class="sr-only">Proposals</h2>
       <div id="proposals"></div>
     </section>
 
     <section data-panel="changes" hidden>
+      <h2 class="sr-only">Your changes</h2>
       <div class="changes-head">
         <button class="btn" id="share">Copy share link</button>
       </div>
@@ -120,6 +140,7 @@
     </section>
 
     <section data-panel="projections" hidden>
+      <h2 class="sr-only">Projections</h2>
       <div class="proj-bar">
         <div class="seg-ctl" role="group" aria-label="Units" id="proj-units">
           <button data-units="usd" aria-pressed="true">Dollars</button>
@@ -134,7 +155,7 @@
       </div>
       <details class="method assumptions" id="assumptions">
         <summary>Economic and behavioral assumptions <span class="chip warn-soft" id="assume-flag" hidden>changed</span></summary>
-        <p class="small">These settings change the projections for both the President's budget and your plan, so you can see how sensitive the outlook is. They don't change the Spending tab, which shows OMB's numbers for <span data-fy>FY</span>.</p>
+        <p class="small">These settings change the projections for both the President's budget and your plan, so you can see how sensitive the outlook is. They don't change the Spending tab, which shows OMB's numbers for <span data-fy>FY2027</span>.</p>
         <div id="assumptions-body"></div>
         <button class="btn ghost small-btn" id="assume-reset" disabled>Reset assumptions</button>
       </details>
@@ -146,6 +167,7 @@
         <p class="chart-sub">What the government owes to investors, at the end of each fiscal year.</p>
         <div class="legend-row"><span><i class="ln plan"></i>Your plan</span><span><i class="ln base"></i>President's budget</span></div>
         <div id="ch-debt"></div>
+        <p class="debt-note">This is debt held by the public, the measure CBO uses. Total federal debt, which also counts about $7.8 trillion the government owes its own trust funds, is about $40.4 trillion (roughly 125% of GDP). <a href="about.html#debt-measures">Why the difference?</a></p>
       </div>
       <div class="chart-card">
         <h3>Annual deficit or surplus</h3>
@@ -191,7 +213,7 @@
     </section>
   </main>
 
-  <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+  <div class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title">
     <div class="drawer-card">
       <button class="close" id="drawer-close" aria-label="Close">×</button>
       <p class="crumbs" id="drawer-path"></p>
@@ -204,11 +226,11 @@
       </div>
       <p class="links" id="drawer-links"></p>
     </div>
-  </aside>
+  </div>
 
   <footer class="wrap foot">
     <p class="foot-links"><a href="about.html">About & methodology</a> · <a href="https://github.com/spmcgee9/federal-budget-balancer">Source code</a> · <a href="mailto:smcgee.dev@gmail.com">Contact</a></p>
-    <p>Built by Sean McGee · Coded with the assistance of Claude (Anthropic). Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>; projections from the Congressional Budget Office. Not an official estimate. <span id="gen"></span></p>
+    <p>Built by Sean McGee · Coded with the assistance of Claude (Anthropic). Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY2027</span>; projections from the Congressional Budget Office. Not an official estimate. <span id="gen"></span></p>
   </footer>
   <div class="toast" id="toast" hidden><span id="toast-text"></span><button id="toast-undo" hidden>Undo</button></div>
   <div class="err-banner" id="err-banner" hidden></div>

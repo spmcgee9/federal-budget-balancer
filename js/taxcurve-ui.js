@@ -72,7 +72,7 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
     const y = (r) => m.t + ih - (r / yMax) * ih;
     const yinv = (py) => ((m.t + ih - py) / ih) * yMax;
     geom = { W, H, m, iw, ih, x, y, xinv, yinv, yMax };
-    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", height: H, role: "img", "aria-label": "Income tax brackets for single filers" });
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", height: H, role: "group", "aria-label": "Income tax brackets for single filers. Use the arrow keys on a bracket point to change it." });
     chartBox.prepend(svg);
     const g = svgEl("g", { class: "axis" }, svg);
     for (let r = 0; r <= yMax + 1e-9; r += yMax > 0.6 ? 0.2 : 0.1) {
@@ -137,7 +137,8 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
       const hx = k === 0 ? x(XMIN) : x(p.t);
       if (p.t > XMAX) return;
       const h = svgEl("circle", { cx: hx, cy: y(p.r), r: 7, class: "curve-handle" + (k === selected ? " sel" : ""), tabindex: 0,
-        role: "slider", "aria-label": `Bracket ${k + 1}: ${pct(p.r)} starting at ${usdFull(p.t)}` }, svg);
+        role: "slider", "aria-label": `Bracket ${k + 1}, starting at ${usdFull(p.t)}`,
+        "aria-valuemin": 0, "aria-valuemax": 99, "aria-valuenow": +(p.r * 100).toFixed(2), "aria-valuetext": `${pct(p.r)} starting at ${usdFull(p.t)}` }, svg);
       h.addEventListener("pointerdown", (e) => startDrag(e, k));
       h.addEventListener("keydown", (e) => keyNudge(e, k));
       h.addEventListener("focus", () => { selected = k; syncButtons(); });
@@ -192,9 +193,14 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
       }
       draw(); renderTable(); commit(true);
     };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); commit(false); refreshAll(); };
+    // pointercancel: the browser took over the gesture (a scroll, a system dialog); end the drag cleanly.
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      commit(false); refreshAll();
+    };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
     draw(); syncButtons();
   }
 
@@ -243,7 +249,8 @@ export function curveEditor(L, { get, set, scorePath, ctx }) {
   function renderTable() {
     table.textContent = "";
     const head = el("tr");
-    for (const h of ["Rate", "Starts at (single)", "Married (joint)", ""]) head.append(el("th", "", h));
+    for (const h of ["Rate", "Starts at (single)", "Married (joint)"]) head.append(el("th", "", h));
+    const thX = el("th"); thX.append(el("span", "sr-only", "Remove")); head.append(thX);
     table.append(head);
     sched.forEach((p, k) => {
       const tr = el("tr");

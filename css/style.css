@@ -15,7 +15,7 @@
   --warn-bg: #f6e7bf;
   --d: #3c5577;
   --d-bg: #e1e7f0;
-  --x: #6f6a60;
+  --x: #625d54;
   --x-bg: #e9e5dc;
   --accent: #2f4a6b;
   --radius: 10px;
@@ -47,8 +47,8 @@ button { font: inherit; color: inherit; }
 .tagline { margin: 0; color: var(--muted); max-width: 640px; }
 
 /* scoreboard */
-.scoreboard { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 96%, transparent);
-  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0 8px; }
+.scoreboard { position: sticky; top: 0; z-index: 20; background: var(--bg); background: color-mix(in srgb, var(--bg) 96%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0 8px; }
 .score-grid { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 6px 16px; align-items: start; }
 .score { display: flex; flex-direction: column; min-width: 0; }
 .score .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
@@ -103,7 +103,7 @@ input.switch::after { content: ""; position: absolute; top: 2px; left: 2px; widt
   box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
 input.switch:checked { background: var(--accent); }
 input.switch:checked::after { left: 16px; }
-input.switch:indeterminate { background: color-mix(in srgb, var(--accent) 45%, var(--x-bg)); }
+input.switch:indeterminate { background: var(--accent); background: color-mix(in srgb, var(--accent) 45%, var(--x-bg)); }
 input.switch:indeterminate::after { left: 9px; }
 #mand-toggle:checked { background: var(--warn); }
 
@@ -118,7 +118,7 @@ input.switch:indeterminate::after { left: 9px; }
 .depth-1 { padding-left: 30px; } .depth-2 { padding-left: 48px; } .depth-3 { padding-left: 66px; } .depth-4 { padding-left: 84px; }
 .t-function { background: var(--card); }
 .t-function .name { font-weight: 600; font-size: 16px; }
-.kids { background: color-mix(in srgb, var(--bg) 40%, var(--card)); }
+.kids { background: var(--card); background: color-mix(in srgb, var(--bg) 40%, var(--card)); }
 .chev, .chev-spacer { width: 22px; height: 22px; flex: none; }
 .chev { border: 0; background: none; cursor: pointer; color: var(--muted); border-radius: 4px; transition: transform .15s; padding: 0; }
 .row.open > .lead > .chev { transform: rotate(90deg); }
@@ -144,12 +144,12 @@ input.switch:indeterminate::after { left: 9px; }
 .amt .arrow { color: var(--muted); margin: 0 4px; font-size: 12px; }
 .amt .now { font-weight: 600; }
 .amt .delta { display: block; font-size: 12px; font-weight: 500; line-height: 1.4; }
-.amt .delta.none { color: var(--muted); opacity: .6; font-weight: 400; }
+.amt .delta.none { color: var(--muted); font-weight: 400; }
 .share { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .legend-note { margin-left: auto; font-style: italic; }
 .cut { color: var(--in); } .add { color: var(--out); }
 .row.changed { box-shadow: inset 3px 0 0 var(--accent); }
-.row.m-changed { box-shadow: inset 3px 0 0 var(--warn); background: color-mix(in srgb, var(--warn-bg) 35%, transparent); }
+.row.m-changed { box-shadow: inset 3px 0 0 var(--warn); background: var(--warn-bg); background: color-mix(in srgb, var(--warn-bg) 35%, transparent); }
 .row.is-off .name { color: var(--muted); text-decoration: line-through; }
 .row.locked .ctrls { opacity: .9; }
 .row.flash { animation: flash 1.6s; }
@@ -263,7 +263,7 @@ input.num:disabled { opacity: .45; }
 .lever-eff { grid-area: eff; align-self: center; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
 .lever-eff span { display: block; }
 .lever-eff .e1 { font-weight: 600; } .lever-eff .e2 { font-size: 12px; }
-.lever-eff .none { color: var(--muted); opacity: .6; font-weight: 400; }
+.lever-eff .none { color: var(--muted); font-weight: 400; }
 
 /* tax curve */
 .lever-curve { display: block; }
@@ -287,7 +287,7 @@ input.num:disabled { opacity: .45; }
 .small-btn { padding: 4px 10px; font-size: 13px; }
 .curve-effect { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
 .curve-effect span { display: block; } .curve-effect .e1 { font-weight: 600; } .curve-effect .e2 { font-size: 12px; }
-.curve-effect .none { color: var(--muted); opacity: .6; font-weight: 400; }
+.curve-effect .none { color: var(--muted); font-weight: 400; }
 .curve-table { width: auto; margin: 4px 0 10px; }
 .curve-table td, .curve-table th { text-align: left; }
 .curve-table tr.sel td { background: var(--d-bg); }
@@ -328,7 +328,7 @@ input.num:disabled { opacity: .45; }
 .prop-amt input.range { width: 160px; }
 .small-seg button { padding: 4px 10px; font-size: 12px; }
 .prop-eff { grid-area: eff; }
-.prop:not(.on) .prop-eff span { color: var(--muted); opacity: .75; font-weight: 400; }
+.prop:not(.on) .prop-eff span { color: var(--muted); font-weight: 400; }
 .prop-eff .e3 { font-size: 11px; color: var(--muted); }
 
 /* simple mode */
@@ -350,12 +350,12 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
 .simple-name { font-weight: 600; font-size: 15px; }
 .simple-name-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .simple-warn { font-size: 11px; }
-.simple-row.m-changed { box-shadow: inset 3px 0 0 var(--warn); background: color-mix(in srgb, var(--warn-bg) 35%, transparent); }
+.simple-row.m-changed { box-shadow: inset 3px 0 0 var(--warn); background: var(--warn-bg); background: color-mix(in srgb, var(--warn-bg) 35%, transparent); }
 .simple-desc { font-size: 12px; color: var(--muted); }
 .simple-eff { text-align: right; font-variant-numeric: tabular-nums; flex: none; min-width: 150px; }
 .simple-eff span { display: block; }
 .simple-eff .big { font-weight: 600; font-size: 14px; }
-.simple-eff .none { color: var(--muted); opacity: .6; font-size: 13px; }
+.simple-eff .none { color: var(--muted); font-size: 13px; }
 .simple-ctl { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
 .simple-ctl input.range { flex: 1; min-width: 160px; max-width: 360px; }
 .simple-ctl .lever-val { min-width: 64px; text-align: left; font-weight: 600; }
@@ -384,6 +384,8 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
 .chart-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px 8px; margin-bottom: 14px; }
 .chart-card h3 { font: 600 16px var(--sans); margin: 0; }
 .chart-sub { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
+.debt-note { font-size: 12px; color: var(--muted); margin: 6px 0 4px; line-height: 1.4; }
+.debt-note a { color: inherit; }
 .legend-row { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
 .legend-row span { display: inline-flex; align-items: center; gap: 5px; }
 .legend-row .ln { width: 18px; height: 0; border-top: 2.5px solid var(--plan); display: inline-block; }
@@ -460,9 +462,10 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
   .lever-ctl input.range { flex: 1; width: auto; min-width: 120px; }
   .lever-val { min-width: 80px; }
   .curve-effect { margin-left: 0; text-align: left; flex-basis: 100%; }
-  .curve-table input.num.wide { width: 80px; }
-  .curve-table input.num:not(.wide) { width: 50px; }
-  .curve-table td, .curve-table th { padding: 4px 4px; font-size: 13px; }
+  .curve-table input.num.wide { width: 96px; padding-left: 4px; padding-right: 4px; }
+  .curve-table input.num:not(.wide) { width: 50px; padding-left: 4px; padding-right: 4px; }
+  .curve-table td, .curve-table th { padding: 4px 3px; font-size: 13px; }
+  .curve-table .numbox { gap: 2px; }
   .lever-eff { min-width: 110px; }
   .phase-ctl { padding: 0 0 8px; }
   /* On phones the tab row can scroll sideways; hide the scrollbar (Safari shows it when "always show scroll bars" is on). */
@@ -491,6 +494,9 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
 .doc h2 { font: 700 22px/1.2 var(--serif); margin: 6px 0 8px; }
 .doc p, .doc li { font-size: 15px; line-height: 1.6; }
 .doc ul { padding-left: 20px; }
+.doc h3 { font: 600 17px var(--sans); margin: 18px 0 6px; }
+.doc .data-table th, .doc .data-table td { white-space: normal; font-size: 13px; }
+.doc .data-table th { text-align: left; font-weight: 500; color: var(--ink); background: none; }
 .doc li { margin-bottom: 6px; }
 .doc ul.plain { list-style: none; padding-left: 0; }
 .sources-table { width: 100%; font-size: 13px; }
@@ -499,3 +505,16 @@ body.mode-simple .toolbar, body.mode-simple main > section[data-panel] { display
 .how-link { display: block; text-align: center; margin: 0 0 8px; color: var(--accent); }
 
 a.btn { text-decoration: none; display: inline-block; }
+
+/* Until the data has loaded, show a short message instead of empty controls. */
+.loading-msg { display: none; margin: 40px 0; color: var(--muted); font-size: 15px; }
+body.loading .loading-msg { display: block; }
+body.loading .toolbar, body.loading [data-panel], body.loading #simple { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* A clear focus ring for keyboard users (mouse clicks don't show it). */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input.range:focus-visible { outline-offset: 4px; border-radius: 4px; }
+/* iPhone Safari zooms the page when a text box or menu under 16px is tapped; 16px prevents that. */
+@media (max-width: 640px) {
+  input:not([type=range]):not([type=checkbox]), select, textarea { font-size: 16px; }
+}

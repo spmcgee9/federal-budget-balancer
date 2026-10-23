@@ -6,6 +6,8 @@ import { scoreProposals, tenYearCost, proposalById } from "./proposals.js?v=dev"
 import { computeResults, spendingTenYear } from "./projections-ui.js?v=dev";
 import { lineChart } from "./charts.js?v=dev";
 
+// Whole percents with thousands separators (an extreme plan can reach 20,000% of GDP).
+const pctN = (v) => Math.round(v).toLocaleString("en-US");
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -122,6 +124,9 @@ export function renderSimple() {
   const leg = el("div", "legend-row");
   leg.innerHTML = '<span><i class="ln plan"></i>Your plan</span><span><i class="ln base"></i>President\'s budget</span>';
   res.append(leg, Object.assign(el("div", "simple-chart"), { id: "simple-chart" }), Object.assign(el("div", "simple-kpis"), { id: "simple-kpis" }));
+  const note = el("p", "debt-note");
+  note.innerHTML = 'This is debt held by the public, the measure CBO uses. Total federal debt, which also counts about $7.8 trillion the government owes its own trust funds, is about $40.4 trillion (roughly 125% of GDP). <a href="about.html#debt-measures">Why the difference?</a>';
+  res.append(note);
   const more = el("div", "simple-more");
   more.id = "simple-more";
   res.append(more);
@@ -350,7 +355,7 @@ function renderResults() {
   const pct = (arr) => arr.slice(i0).map((v, k) => (v / res.gdp[i0 + k]) * 100);
   lineChart($("#simple-chart"), {
     years: yrs, height: 230, zeroBase: true, label: "Debt as a share of GDP",
-    fmt: (v) => Math.round(v) + "%", fmtTick: (v) => v + "%",
+    fmt: (v) => pctN(v) + "%", fmtTick: (v) => pctN(v) + "%",
     refs: [{ value: 106, label: "Post-WWII record (106%)" }],
     series: [
       { name: "President's budget", short: "President", values: pct(res.base.debt), color: css("--base-line"), dash: true },
@@ -365,10 +370,10 @@ function renderResults() {
     k.append(c);
   };
   const L = Y[Y.length - 1];
-  const fmtD = (d) => (d.debt <= 0 ? "Paid off" : Math.round(d.pct) + "%");
+  const fmtD = (d) => (d.debt <= 0 ? "Paid off" : pctN(d.pct) + "%");
   const better = (a, b) => (Math.abs(a - b) < 0.5 ? null : a < b);
-  card(`Debt in ${P.planStart + 9}, % of GDP`, fmtD(sum.mine.d10), `President's budget: ${Math.round(sum.base.d10.pct)}%`, better(sum.mine.d10.pct, sum.base.d10.pct));
-  card(`Debt in ${L}, % of GDP`, fmtD(sum.mine.d30), `President's budget: ${Math.round(sum.base.d30.pct)}%`, better(sum.mine.d30.pct, sum.base.d30.pct));
+  card(`Debt in ${P.planStart + 9}, % of GDP`, fmtD(sum.mine.d10), `President's budget: ${pctN(sum.base.d10.pct)}%`, better(sum.mine.d10.pct, sum.base.d10.pct));
+  card(`Debt in ${L}, % of GDP`, fmtD(sum.mine.d30), `President's budget: ${pctN(sum.base.d30.pct)}%`, better(sum.mine.d30.pct, sum.base.d30.pct));
   const m = sum.mine;
   if (m.payoff) card("Debt paid off", String(m.payoff.year), m.payoff.extrapolated ? "extrapolated past 2056" : "", true);
   else if (m.firstSurplus) card("First surplus", String(m.firstSurplus), "but debt isn't paid off by 2150", true);

@@ -35,7 +35,8 @@ How it works:
 - **Baseline:** CBO's February 2026 current-law projections, plus CBO's estimate of the President's 2027 spending proposals, plus CBO's July 2026 tariff update (after the Supreme Court ended the IEEPA tariffs). The President's budget proposed no tax changes.
 - **Your plan:** 2027–2031 changes come from OMB's year-by-year account data (the same numbers as the Spending tab); after 2031 each category's change grows with CBO's projection for that category.
 - **Interest:** CBO's baseline interest plus interest on the extra or avoided debt at CBO's projected average rate on federal debt.
-- Past 2056 (payoff only), 2056's ratios to GDP are held constant. Economic feedback isn't modeled yet.
+- Past 2056 (payoff only), 2056's ratios to GDP are held constant.
+- Debt is **debt held by the public** (CBO's measure). Treasury's total debt also counts bonds held by federal trust funds (about $7.8 trillion more); the debt charts and the About page explain the difference.
 
 ## Revenue (Phase 3)
 
@@ -64,7 +65,7 @@ An **Economic and behavioral assumptions** panel at the top of the Projections t
 - **Forecast:** CBO (default) or OMB's FY2027 economic assumptions (faster growth, lower rates). OMB's GDP and interest rates are applied relative to CBO's through 2036, then held.
 - **Growth:** ± real growth per year. Revenue moves in proportion; mandatory spending moves 0.4% per 1% of GDP; discretionary spending is fixed in dollars. (0.1 point slower growth ≈ +$305B in deficits over 2027–2036; CBO's rule of thumb for productivity growth: +$317B.)
 - **Interest rates:** ± points, reaching the average rate on the debt over about six years. (+0.1 point ≈ +$391B over 2027–2036; CBO's rule of thumb: +$379B.)
-- **Debt feedback:** optional; each point of debt-to-GDP above CBO's current-law path raises rates 2 basis points.
+- **Debt feedback:** optional; each point of debt-to-GDP above CBO's current-law path raises rates 2 basis points, capped at 3 points.
 - **Behavior:** elasticity of taxable income for the income tax curve (default 0.25) and the share of tax-break estimates counted on repeal (default 75%).
 
 Assumptions are saved in share links and reset by "Start over."
@@ -139,7 +140,7 @@ Then visit http://localhost:8000.
 7. ✅ Simple mode (default) with an Advanced toggle
 8. ✅ Methodology and About page (`about.html`)
 9. ✅ UI clean-up (chart labels, layout, phone sizing)
-10. Performance and stability pass
+10. ✅ Performance and stability pass (share-link validation, failed-load handling, accessibility, older-Safari fallbacks)
 
 ## Credits
 
@@ -148,6 +149,12 @@ Built by Sean McGee ([github.com/spmcgee9](https://github.com/spmcgee9), smcgee.
 ## License
 
 [MIT](LICENSE) © 2026 Sean McGee. The underlying budget data come from U.S. government sources (OMB, CBO, IRS) and are in the public domain; cost estimates from other organizations are cited to their sources.
+
+## Reliability
+
+- Share links are validated when opened: values outside a control's range are clamped, unknown settings are dropped, and a damaged link falls back to the President's budget with a notice.
+- If a data file fails to download, the page says so instead of showing empty controls; files are retried once.
+- Checked with the axe accessibility checker (WCAG 2 AA) in light and dark mode, and by keyboard.
 
 ## Caveats
 
