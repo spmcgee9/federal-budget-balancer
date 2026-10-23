@@ -37,13 +37,22 @@
         <span class="val" id="sc-bal">—</span>
         <span class="sub" id="sc-bal-d"></span>
       </div>
-      <div class="meter" aria-hidden="true">
-        <div class="bar rev"><span id="bar-rev"></span></div>
-        <div class="bar out"><span id="bar-out"></span><i id="bar-out-base" title="Baseline spending"></i></div>
+      <div class="meter">
+        <div class="bar rev" title="Revenue"><span id="bar-rev"></span></div>
+        <div class="bar out" id="bar-out" title="Spending">
+          <span class="seg M" data-seg="M"></span><span class="seg I" data-seg="I"></span><span class="seg DD" data-seg="DD"></span><span class="seg ND" data-seg="ND"></span>
+          <i id="bar-out-base" title="Baseline spending"></i>
+        </div>
+        <div class="seg-legend" id="seg-legend">
+          <span data-leg="M"><i class="sw M"></i>Mandatory <b></b></span>
+          <span data-leg="I"><i class="sw I"></i>Net interest <b></b></span>
+          <span data-leg="DD"><i class="sw DD"></i>Defense <b></b></span>
+          <span data-leg="ND"><i class="sw ND"></i>Nondefense <b></b></span>
+        </div>
       </div>
     </div>
-    <div class="wrap mand-flag" id="mand-flag" hidden>
-      <span>⚠</span> <span id="mand-flag-text"></span>
+    <div class="wrap">
+      <div class="mand-flag" id="mand-flag"><span id="mand-flag-icon">🔒</span><span id="mand-flag-text"></span></div>
     </div>
   </section>
 
@@ -70,6 +79,7 @@
         <span class="chip D">Discretionary</span><span>set each year by Congress</span>
         <span class="chip M">Mandatory</span><span>set by existing law</span>
         <span class="chip X">Locked</span><span>interest, internal transfers, and offsetting receipts</span>
+        <span class="legend-note">Largest first</span>
       </div>
       <div id="tree" class="tree" role="tree"></div>
       <div id="search-results" class="tree" hidden></div>

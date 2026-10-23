@@ -12,6 +12,8 @@ export class BudgetModel {
     this.leaves = [];
     this.roots = data.tree;
     for (const r of this.roots) this.#index(r, null, r);
+    // Largest functions first, mandatory or not: the point is to show where the money goes.
+    this.roots.sort((a, b) => this.#rawTotal(b) - this.#rawTotal(a));
     for (const a of this.desc.accounts || []) {
       a.re = new RegExp(a.match, "i");
       a.agRe = a.agency ? new RegExp(a.agency, "i") : null;
@@ -120,6 +122,13 @@ export class BudgetModel {
         n.mChanged += mChanged;
       }
     }
+    // Spending split for the scoreboard bar: mandatory, net interest, defense and nondefense discretionary.
+    this.seg = { base: { M: 0, I: 0, DD: 0, ND: 0 }, eff: { M: 0, I: 0, DD: 0, ND: 0 } };
+    for (const leaf of this.leaves) {
+      const k = leaf.cat === "I" ? "I" : leaf.cat === "M" ? "M" : leaf.fn.code === "050" ? "DD" : "ND";
+      this.seg.base[k] += leaf.v[bi] || 0;
+      this.seg.eff[k] += this.leafValue(leaf);
+    }
     this.totalOutlays = this.roots.reduce((s, r) => s + r.base, 0);
     this.planOutlays = this.roots.reduce((s, r) => s + r.eff, 0);
     this.totalReceipts = this.receipts.reduce((s, r) => s + (r.v[bi] || 0), 0);
@@ -209,7 +218,7 @@ export class BudgetModel {
   pausedMandatoryCount() {
     if (this.mandatoryUnlocked) return 0;
     let k = 0;
-    for (const [id, s] of this.settings) if (s.m && !this.changes.has(id)) k++;
+    for (const [id, s] of this.settings) if (s.m && this.nodes.get(id).baseM > 0.5) k++;
     return k;
   }
 

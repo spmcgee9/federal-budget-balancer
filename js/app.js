@@ -154,20 +154,26 @@ function updateRow(row, n) {
   const lockR = n.leaf ? model.lockReason(n) : (st.editable ? null : groupLockReason(n));
 
   // amount
+  // Always two lines (amount, then change) so rows don't jump when a slider crosses zero.
   p.amt.textContent = "";
-  if (changed) {
-    p.amt.append(el("span", "was", fmt(n.base)), el("span", "arrow", "→"), el("span", "now", fmt(n.eff)));
-    const d = n.eff - n.base;
-    p.amt.append(el("span", "delta " + (d < 0 ? "cut" : "add"), fmt(d, { sign: true })));
-  } else {
-    p.amt.append(el("span", "now", fmt(n.base)));
-  }
+  const line1 = el("span", "amt-line");
+  if (changed) line1.append(el("span", "was", fmt(n.base)), el("span", "arrow", "→"), el("span", "now", fmt(n.eff)));
+  else line1.append(el("span", "now", fmt(n.base)));
+  const d = n.eff - n.base;
+  const line2 = changed
+    ? el("span", "delta " + (d < 0 ? "cut" : "add"), fmt(d, { sign: true }))
+    : el("span", "delta none", lockR ? "\u00a0" : "no change");
+  p.amt.append(line1, line2);
 
   // tags
   p.tags.textContent = "";
   const chip = el("span", "chip " + (kind === "mixed" ? "mixed" : kind), KIND_LABEL[kind]);
   if (!n.leaf) chip.title = `${fmt(n.baseD)} discretionary, ${fmt(n.baseM)} mandatory`;
   p.tags.append(chip);
+  if (n.type === "function" && n.base > 0) {
+    const sh = (n.base / model.totalOutlays) * 100;
+    p.tags.append(el("span", "share", `${sh < 1 ? sh.toFixed(1) : Math.round(sh)}% of spending`));
+  }
   if (n.mChanged > 0) p.tags.append(el("span", "chip warn", "⚠ Mandatory changed"));
   if (!n.leaf && st.editable && n.baseM > 0.5 && !model.mandatoryUnlocked) {
     p.tags.append(el("span", "scope", `controls apply to ${fmt(n.adjBase)} discretionary`));
@@ -249,32 +255,53 @@ function renderScore() {
   balEl.className = "val " + (bal >= 0 ? "in" : "out");
   const closed = bal - bal0;
   const base = `${bal0 < 0 ? "Baseline deficit" : "Baseline surplus"} ${fmt(Math.abs(bal0))}`;
-  let note = "your plan matches the President's budget";
+  let note = "Your plan matches the President's budget";
   if (Math.abs(closed) > 0.05) {
     note = closed > 0
-      ? `${base} · you cut the deficit by ${fmt(closed)}${bal0 < 0 ? ` (${Math.min(999, Math.round((closed / -bal0) * 100))}% of the gap)` : ""}`
-      : `${base} · you added ${fmt(-closed)} to the deficit`;
+      ? `${base} · you cut ${fmt(closed)}${bal0 < 0 ? ` (${Math.min(999, Math.round((closed / -bal0) * 100))}% of the gap)` : ""}`
+      : `${base} · you added ${fmt(-closed)}`;
   }
   $("#sc-bal-d").textContent = note;
+
+  // Spending bar, split into mandatory / interest / defense / nondefense.
   const max = Math.max(R, O, O0);
   $("#bar-rev").style.width = (R / max) * 100 + "%";
-  $("#bar-out").style.width = (O / max) * 100 + "%";
+  const seg = model.seg.eff;
+  const segTotal = seg.M + seg.I + seg.DD + seg.ND;
+  for (const k of ["M", "I", "DD", "ND"]) {
+    const w = Math.max(0, seg[k]) / max * 100;
+    $(`#bar-out [data-seg=${k}]`).style.width = w + "%";
+    const pct = (seg[k] / segTotal) * 100;
+    $(`#seg-legend [data-leg=${k}] b`).textContent = Math.round(pct) + "%";
+  }
   $("#bar-out-base").style.left = (O0 / max) * 100 + "%";
+  const lockedM = !model.mandatoryUnlocked;
+  $("#bar-out").classList.toggle("m-locked", lockedM);
+  $("#seg-legend").classList.toggle("m-locked", lockedM);
+  const lockedShare = Math.round(((lockedM ? seg.M : 0) + seg.I) / segTotal * 100);
 
-  // mandatory flag
+  // Status line under the scoreboard. It is always present (no layout jump); only its message changes.
   let mTotal = 0;
   for (const c of model.changes.values()) mTotal += c.deltaM;
   const paused = model.pausedMandatoryCount();
   const flag = $("#mand-flag");
+  let state, icon, text;
   if (Math.abs(mTotal) > 0.05) {
-    flag.hidden = false;
-    flag.classList.remove("paused");
-    $("#mand-flag-text").textContent = `Your plan changes mandatory programs by ${fmt(mTotal, { sign: true })}. These require Congress to change existing law, not just appropriations.`;
+    state = "changed"; icon = "⚠";
+    text = `Your plan changes mandatory programs by ${fmt(mTotal, { sign: true })}. That requires Congress to change existing law.`;
+  } else if (!lockedM) {
+    state = "unlocked"; icon = "⚠";
+    text = "Mandatory programs unlocked. Changing them requires Congress to rewrite existing law.";
   } else if (paused) {
-    flag.hidden = false;
-    flag.classList.add("paused");
-    $("#mand-flag-text").textContent = `${paused} mandatory change${paused > 1 ? "s are" : " is"} paused while mandatory edits are off.`;
-  } else flag.hidden = true;
+    state = "paused"; icon = "⏸";
+    text = `${paused} mandatory change${paused > 1 ? "s are" : " is"} paused while mandatory programs are locked.`;
+  } else {
+    state = "locked"; icon = "🔒";
+    text = `${lockedShare}% of spending (mandatory programs and interest) is locked. You can change the other ${100 - lockedShare}%.`;
+  }
+  flag.dataset.state = state;
+  $("#mand-flag-icon").textContent = icon;
+  $("#mand-flag-text").textContent = text;
 }
 
 // ---------- changes ----------
@@ -477,7 +504,6 @@ function wire() {
   document.querySelectorAll("[role=tab]").forEach((b) => b.addEventListener("click", () => selectTab(b.dataset.tab)));
   $("#mand-toggle").addEventListener("change", (e) => {
     model.setMandatoryUnlocked(e.target.checked);
-    if (e.target.checked) toast("Mandatory programs unlocked. Changes to them will be flagged.");
     refresh();
     commit();
   });
