@@ -65,7 +65,8 @@ export function project(P, plan = {}) {
   });
   const gdp = P.gdp.map((g, i) => g * gdpRatio[i]);
   // Interest-rate changes reach the average rate on the debt gradually as it rolls over (about 5 years).
-  const roll = (y) => Math.max(0, Math.min(1, (y - (start - 1)) / 5));
+  const ROLL_YEARS = plan.rollYears || 6;
+  const roll = (y) => Math.max(0, Math.min(1, (y - (start - 1)) / ROLL_YEARS));
   const drBase = Y.map((y, i) => (y < start ? 0 : ((A.dr || 0) + (A.fc === "omb" ? P.omb.dr[i] : 0)) * roll(y)));
   const MAND_ELASTICITY = 0.4;  // mandatory spending rises 0.4% for each 1% of extra GDP (benefits partly tied to wages and prices)
   const FEEDBACK_BP = 2;        // basis points of interest per percentage point of debt-to-GDP above CBO's path

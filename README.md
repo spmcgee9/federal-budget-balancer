@@ -52,8 +52,8 @@ At the top of the Revenue tab, an editable chart of income tax brackets for sing
 An **Economic and behavioral assumptions** panel at the top of the Projections tab changes the outlook for both the President's budget and your plan:
 
 - **Forecast:** CBO (default) or OMB's FY2027 economic assumptions (faster growth, lower rates). OMB's GDP and interest rates are applied relative to CBO's through 2036, then held.
-- **Growth:** ± real growth per year. Revenue moves in proportion; mandatory spending moves 0.4% per 1% of GDP; discretionary spending is fixed in dollars. (0.1 point slower growth ≈ +$300B in deficits over 10 years, in line with CBO's rule of thumb.)
-- **Interest rates:** ± points, reaching the average rate on the debt over about five years. (+0.1 point ≈ +$400B over 10 years.)
+- **Growth:** ± real growth per year. Revenue moves in proportion; mandatory spending moves 0.4% per 1% of GDP; discretionary spending is fixed in dollars. (0.1 point slower growth ≈ +$305B in deficits over 2027–2036; CBO's rule of thumb for productivity growth: +$317B.)
+- **Interest rates:** ± points, reaching the average rate on the debt over about six years. (+0.1 point ≈ +$391B over 2027–2036; CBO's rule of thumb: +$379B.)
 - **Debt feedback:** optional; each point of debt-to-GDP above CBO's current-law path raises rates 2 basis points.
 - **Behavior:** elasticity of taxable income for the income tax curve (default 0.25) and the share of tax-break estimates counted on repeal (default 75%).
 
