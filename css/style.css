@@ -165,7 +165,13 @@ input.num:disabled { opacity: .45; }
 .reset, .info { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); cursor: pointer; padding: 0;
   font-size: 13px; color: var(--muted); flex: none; }
 .info { font-weight: 600; color: var(--accent); }
-.info:hover, .reset:hover { border-color: var(--accent); }
+.info:hover, .reset:not(:disabled):hover { border-color: var(--accent); }
+.reset:disabled { opacity: .35; cursor: default; }
+.masthead-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.start-over { flex: none; margin-top: 4px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.toast { display: flex; align-items: center; gap: 12px; }
+.toast button { border: 0; background: none; color: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0; }
 .lock { font-size: 13px; cursor: help; }
 
 /* revenue & notes */
@@ -272,6 +278,7 @@ input.num:disabled { opacity: .45; }
 /* phones */
 @media (max-width: 640px) {
   .masthead h1 { font-size: 25px; }
+  .start-over { padding: 5px 10px; font-size: 13px; }
   .scoreboard { padding: 6px 0 6px; }
   .score-grid { grid-template-columns: 1fr 1fr; gap: 0 12px; }
   .score { flex-direction: row; align-items: baseline; gap: 6px; }

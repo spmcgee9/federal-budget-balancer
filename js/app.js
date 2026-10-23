@@ -191,7 +191,11 @@ function updateRow(row, n) {
   p.lock.hidden = !lockR;
   p.lock.textContent = lockR ? "🔒" : "";
   p.lock.title = lockR ? LOCK_TEXT[lockR] : "";
-  p.reset.hidden = !(changed || model.settings.has(n.id));
+  // Always present (so the slider never shifts sideways); disabled until there's something to reset.
+  const resettable = changed || model.settings.has(n.id);
+  p.reset.hidden = !!lockR;
+  p.reset.disabled = !resettable;
+  p.reset.title = resettable ? "Reset to baseline" : "No changes to reset";
   if (!lockR) {
     p.sw.checked = st.on;
     p.sw.indeterminate = st.mixed;
@@ -232,6 +236,7 @@ function refresh() {
   if (!$("[data-panel=changes]").hidden) renderChanges();
   if (!$("[data-panel=projections]").hidden) scheduleProjections();
   updateChangeCount();
+  $("#start-over").disabled = !model.settings.size && !model.mandatoryUnlocked;
 }
 
 let projTimer;
@@ -504,12 +509,31 @@ function selectTab(name) {
   if (name === "projections") renderProjections();
 }
 
-function toast(msg) {
+function toast(msg, { undo = false, ms = 2400 } = {}) {
   const t = $("#toast");
-  t.textContent = msg;
+  $("#toast-text").textContent = msg;
+  $("#toast-undo").hidden = !undo;
   t.hidden = false;
   clearTimeout(t._t);
-  t._t = setTimeout(() => (t.hidden = true), 2400);
+  t._t = setTimeout(() => (t.hidden = true), ms);
+}
+
+// Start over: back to the President's budget, with a few seconds to undo instead of a confirm dialog.
+let undoState = null;
+function startOver() {
+  if (!model.settings.size && !model.mandatoryUnlocked) return;
+  undoState = model.encode();
+  model.resetAll();
+  model.setMandatoryUnlocked(false);
+  $("#mand-toggle").checked = false;
+  rebuildViews();
+  toast("Back to the President's budget.", { undo: true, ms: 7000 });
+}
+
+function rebuildViews() {
+  if ($("#search").value.trim().length >= 2) onSearch(); else renderTree();
+  refresh();
+  commit();
 }
 
 function wire() {
@@ -523,11 +547,15 @@ function wire() {
   $("#drawer-close").addEventListener("click", () => ($("#drawer").hidden = true));
   $("#drawer").addEventListener("click", (e) => { if (e.target.id === "drawer") $("#drawer").hidden = true; });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#drawer").hidden = true; });
-  $("#reset-all").addEventListener("click", () => {
-    if (!confirm("Reset every change back to the President's budget?")) return;
-    model.resetAll();
-    refresh();
-    commit();
+  $("#reset-all").addEventListener("click", startOver);
+  $("#start-over").addEventListener("click", startOver);
+  $("#toast-undo").addEventListener("click", () => {
+    if (!undoState) return;
+    model.decode(undoState);
+    $("#mand-toggle").checked = model.mandatoryUnlocked;
+    undoState = null;
+    rebuildViews();
+    $("#toast").hidden = true;
   });
   $("#share").addEventListener("click", async () => {
     commit();
