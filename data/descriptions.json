@@ -1,0 +1,453 @@
+{
+  "_note": "Plain-language descriptions shown by the 'What is this?' button. Keys: f### = budget function, s### = subfunction. 'accounts' entries match account names (case-insensitive regex) and optionally agency names. 'transfers' lists account-name patterns (with optional BEA category) that are internal transfers and are locked.",
+  "nodes": {
+    "f050": "Money for the armed forces and other national security activities: pay and benefits for troops, weapons purchases, research and development, military construction, and the nuclear weapons programs run by the Department of Energy.",
+    "s051": "The Department of Defense itself: military personnel, operation and maintenance, procurement of weapons and equipment, research and development, military construction, and family housing.",
+    "s053": "Nuclear weapons and naval nuclear reactor programs, plus cleanup of former weapons sites, run mostly by the Department of Energy's National Nuclear Security Administration.",
+    "s054": "Defense-related activities outside DoD and DOE, such as parts of the FBI's national security work, the Selective Service System, and the intelligence community management account.",
+    "f150": "Foreign affairs: the State Department and embassies, foreign aid, security assistance to allies, contributions to international organizations, and international financial programs.",
+    "s151": "Economic development and humanitarian aid to other countries, including disaster relief, global health programs, and refugee assistance.",
+    "s152": "Military and security aid to foreign governments, such as Foreign Military Financing and peacekeeping support.",
+    "s153": "Running U.S. diplomacy: the State Department, embassies and consulates, embassy security, and dues to the UN and other international organizations.",
+    "s154": "International broadcasting and educational and cultural exchange programs such as Fulbright.",
+    "s155": "International financial programs, including the Export-Import Bank and contributions to multilateral development banks and the IMF.",
+    "f250": "Federal science and space programs: NASA, the National Science Foundation, and the Department of Energy's basic science research.",
+    "s251": "Basic scientific research funded mainly by the National Science Foundation and the Department of Energy's Office of Science.",
+    "s252": "NASA's human spaceflight, science missions, aeronautics, and supporting research.",
+    "f270": "Energy programs: energy research and development, power marketing administrations, the Tennessee Valley Authority, the Strategic Petroleum Reserve, and energy regulation.",
+    "s271": "Energy supply programs, including nuclear, fossil, and renewable energy research and the federal power marketing administrations.",
+    "s272": "Energy efficiency and conservation programs, such as weatherization assistance and efficiency research.",
+    "s274": "Emergency energy preparedness, chiefly the Strategic Petroleum Reserve.",
+    "s276": "Energy information and regulation, including the Energy Information Administration and the Nuclear Regulatory Commission.",
+    "f300": "Natural resources and the environment: water projects, public lands, national parks, conservation, and pollution control.",
+    "s301": "Water resource projects such as flood control, navigation, and irrigation, mainly by the Army Corps of Engineers and the Bureau of Reclamation.",
+    "s302": "Managing federal lands and conservation, including the Forest Service, Bureau of Land Management, and wildland firefighting.",
+    "s303": "Recreational resources, primarily the National Park Service.",
+    "s304": "Pollution control and cleanup, mostly the Environmental Protection Agency, including Superfund and clean water grants to states.",
+    "s306": "Other natural resource programs such as NOAA's weather and ocean programs and the U.S. Geological Survey.",
+    "f350": "Agriculture: farm income support, crop insurance, and agricultural research and inspection.",
+    "s351": "Farm income stabilization: commodity support payments, crop insurance, and farm loans.",
+    "s352": "Agricultural research, extension, and inspection services such as meat and poultry inspection and pest control.",
+    "f370": "Commerce and housing credit: mortgage credit programs, the Postal Service, deposit insurance, and other programs that support business and commerce.",
+    "s371": "Federal mortgage credit programs, such as FHA mortgage insurance and rural housing loans.",
+    "s372": "The U.S. Postal Service. Most of its spending is covered by postage revenue and is off-budget.",
+    "s373": "Deposit insurance through the FDIC and the National Credit Union Administration.",
+    "s376": "Other programs that support commerce, such as the Census Bureau, the Small Business Administration, and the Patent and Trademark Office.",
+    "f400": "Transportation: highways, transit, aviation, maritime programs, and passenger rail.",
+    "s401": "Ground transportation: federal highway grants to states, transit grants, rail, and highway safety.",
+    "s402": "Air transportation: the FAA, air traffic control, airport grants, and the TSA's aviation security.",
+    "s403": "Water transportation: the Coast Guard's non-defense missions and maritime programs.",
+    "s407": "Other transportation programs, such as Department of Transportation administration.",
+    "f450": "Community and regional development: community development grants, regional development programs, and disaster relief.",
+    "s451": "Community development, such as Community Development Block Grants.",
+    "s452": "Area and regional development, including rural development programs and regional commissions.",
+    "s453": "Disaster relief and insurance, mainly FEMA's Disaster Relief Fund and the National Flood Insurance Program.",
+    "f500": "Education, job training, employment services, and social services.",
+    "s501": "K-12 and vocational education, including Title I grants for disadvantaged students and special education grants.",
+    "s502": "Higher education, including Pell Grants and federal student loans.",
+    "s503": "Research and general education aids, such as the Smithsonian and the Library of Congress.",
+    "s504": "Job training and employment programs, such as Workforce Innovation and Opportunity Act grants and Job Corps.",
+    "s505": "Other labor services, such as workplace safety and labor standards enforcement and the Bureau of Labor Statistics.",
+    "s506": "Social services, including Head Start, child care, foster care, and programs for older Americans.",
+    "f550": "Federal health spending other than Medicare: Medicaid, ACA marketplace subsidies, the Children's Health Insurance Program, biomedical research, and public health.",
+    "s551": "Health care services: Medicaid, ACA premium tax credits, CHIP, community health centers, and Indian Health Service.",
+    "s552": "Health research and training, mainly the National Institutes of Health.",
+    "s554": "Consumer and occupational health and safety, including the FDA and food safety programs.",
+    "f570": "Medicare: health insurance for people 65 and older and some people with disabilities. Hospital insurance (Part A) is funded mainly by payroll taxes; physician care (Part B) and prescription drugs (Part D) are funded by premiums and general revenue. Premiums appear here as negative amounts.",
+    "s571": "Medicare benefit payments and administration.",
+    "f600": "Income security: programs that support people with low incomes, the unemployed, and retired federal workers.",
+    "s601": "Retirement and disability programs other than Social Security, such as railroad retirement and black lung benefits.",
+    "s602": "Pensions and disability benefits for retired federal civilian employees and military retirees.",
+    "s603": "Unemployment insurance benefits paid through the states.",
+    "s604": "Housing assistance, such as Section 8 rental vouchers and public housing.",
+    "s605": "Food and nutrition assistance: SNAP (food stamps), school lunch and breakfast programs, and WIC.",
+    "s609": "Other income security, including Supplemental Security Income and the refundable portions of the Earned Income and Child Tax Credits.",
+    "f650": "Social Security: retirement, survivors, and disability benefits funded mainly by payroll taxes. Social Security's trust funds are off-budget by law but count toward the total deficit shown here.",
+    "s651": "Social Security benefits and administration.",
+    "f700": "Veterans benefits and services: disability compensation, pensions, VA health care, education benefits, and home loan guarantees.",
+    "s701": "Income security for veterans: disability compensation and pensions.",
+    "s702": "Veterans education, training, and rehabilitation, mainly the GI Bill.",
+    "s703": "Hospital and medical care for veterans through the Veterans Health Administration.",
+    "s704": "Veterans housing loan guarantees.",
+    "s705": "Other veterans benefits and services, such as VA administration and national cemeteries.",
+    "f750": "Administration of justice: federal law enforcement, the courts, prosecution, and prisons.",
+    "s751": "Federal law enforcement, including the FBI, DEA, ATF, U.S. Marshals, and Customs and Border Protection and Immigration and Customs Enforcement.",
+    "s752": "Federal litigation and the judiciary: the federal courts, U.S. Attorneys, and legal services.",
+    "s753": "Federal prisons.",
+    "s754": "Grants to state and local criminal justice systems.",
+    "f800": "General government: Congress, the White House, tax collection, federal property management, and aid to state and local governments.",
+    "s801": "Congress and legislative branch agencies.",
+    "s802": "Executive direction and management, including the Executive Office of the President.",
+    "s803": "Central fiscal operations, mainly the Internal Revenue Service.",
+    "s804": "Federal property and records management, such as the General Services Administration and National Archives.",
+    "s805": "Central personnel management, chiefly the Office of Personnel Management.",
+    "s806": "General purpose fiscal assistance to states and territories, such as payments in lieu of taxes.",
+    "s808": "Other general government programs.",
+    "s809": "Offsetting receipts credited to general government activities.",
+    "f900": "Net interest: interest the government pays on its debt, minus interest it earns. It is not set by Congress directly; it follows from how much the government has borrowed and current interest rates. Locked here because it will be calculated from your choices in the Projections phase.",
+    "s901": "Gross interest on Treasury debt securities, including interest paid to trust funds.",
+    "s902": "Interest received by on-budget trust funds such as Medicare and federal retirement funds (subtracted from gross interest).",
+    "s903": "Interest received by the Social Security trust funds (subtracted from gross interest).",
+    "s908": "Other interest paid and received, such as interest on tax refunds and on federal loans.",
+    "s909": "Other investment income.",
+    "f920": "Allowances: placeholder amounts for costs or savings the budget expects but hasn't assigned to specific programs yet.",
+    "f950": "Undistributed offsetting receipts: income the government collects that offsets spending, such as agencies' payments into employee retirement funds and oil and gas royalties from offshore leases. Shown as negative amounts and locked, since they aren't spending programs.",
+    "s951": "Employer contributions by federal agencies to on-budget employee retirement funds (an internal transfer).",
+    "s952": "Employer contributions by federal agencies to Social Security for federal employees (an internal transfer).",
+    "s953": "Rents and royalties from oil and gas leases on the Outer Continental Shelf.",
+    "s954": "Proceeds from selling major federal assets.",
+    "s959": "Other offsetting receipts, such as spectrum auction proceeds."
+  },
+  "accounts": [
+    {
+      "match": "Old-Age and Survivors Insurance Trust Fund",
+      "text": "Pays Social Security retirement and survivors benefits to about 60 million retirees, spouses, and children of deceased workers. Funded mainly by payroll taxes."
+    },
+    {
+      "match": "Disability Insurance Trust Fund",
+      "agency": "Social Security",
+      "text": "Pays Social Security Disability Insurance benefits to workers who can no longer work because of a long-term disability, and to their families."
+    },
+    {
+      "match": "Hospital Insurance Trust Fund",
+      "text": "Medicare Part A: hospital stays, skilled nursing facility care, hospice, and some home health care. Funded mainly by the Medicare payroll tax."
+    },
+    {
+      "match": "Supplementary Medical Insurance Trust Fund",
+      "text": "Medicare Part B (doctor visits and outpatient care) and Part D (prescription drugs). Funded about three-quarters by general tax revenue and one-quarter by beneficiary premiums."
+    },
+    {
+      "match": "^Grants to States for Medicaid",
+      "text": "The federal share of Medicaid, the joint federal-state health insurance program for people with low incomes and people with disabilities, and the largest funder of long-term nursing home care.",
+      "keywords": "Medicaid"
+    },
+    {
+      "match": "Supplemental Nutrition Assistance Program",
+      "text": "SNAP (formerly food stamps): monthly benefits on an EBT card that low-income households use to buy groceries.",
+      "keywords": "food stamps EBT"
+    },
+    {
+      "match": "Supplemental Security Income",
+      "text": "SSI: monthly cash payments to people with very low income and assets who are 65 or older, blind, or disabled. Funded by general revenue, not payroll taxes."
+    },
+    {
+      "match": "Earned Income (Tax )?Credit",
+      "text": "The refundable part of the Earned Income Tax Credit: payments to low- and moderate-income workers whose credit is larger than the income tax they owe.",
+      "keywords": "EITC"
+    },
+    {
+      "match": "Child Tax Credit",
+      "text": "The refundable part of the Child Tax Credit: payments to families whose credit is larger than the income tax they owe.",
+      "keywords": "CTC"
+    },
+    {
+      "match": "Premium Tax Credit",
+      "text": "Subsidies that lower the cost of health insurance bought through the ACA marketplaces for people with low and moderate incomes.",
+      "keywords": "Obamacare ACA marketplace subsidies"
+    },
+    {
+      "match": "Children's Health Insurance",
+      "text": "CHIP: federal grants to states to cover children in families that earn too much for Medicaid but cannot afford private insurance.",
+      "keywords": "CHIP"
+    },
+    {
+      "match": "^Unemployment Trust Fund",
+      "text": "Unemployment insurance benefits and administration, financed by federal and state payroll taxes on employers."
+    },
+    {
+      "match": "^Military Personnel, ",
+      "text": "Pay, allowances, housing, and other compensation for active-duty service members in this branch."
+    },
+    {
+      "match": "^Operation and Maintenance, ",
+      "text": "Day-to-day costs of running the military in this branch: training, fuel, equipment repair, base operations, and civilian employee pay."
+    },
+    {
+      "match": "^Procurement",
+      "agency": "Defense",
+      "text": "Purchasing weapons systems, aircraft, ships, vehicles, munitions, and other major equipment."
+    },
+    {
+      "match": "^Research, Development, Test",
+      "text": "Developing and testing new military technology and weapons systems before they are bought in quantity."
+    },
+    {
+      "match": "^Military Construction",
+      "text": "Building and renovating military facilities such as barracks, hangars, and training ranges."
+    },
+    {
+      "match": "^Defense Health Program",
+      "text": "Health care for service members, military retirees, and their families, including TRICARE.",
+      "keywords": "TRICARE"
+    },
+    {
+      "match": "^Medical Services$|^Medical Care$",
+      "agency": "Veterans",
+      "text": "Health care for enrolled veterans at VA hospitals and clinics."
+    },
+    {
+      "match": "^Compensation( and Pensions)?( \\(|$)",
+      "text": "Monthly payments to veterans with service-connected disabilities and needs-based pensions for low-income wartime veterans and their survivors.",
+      "agency": "Veterans"
+    },
+    {
+      "match": "^Interest on Treasury Debt Securities",
+      "text": "Interest paid on all Treasury debt, including debt held by trust funds such as Social Security. Interest paid to trust funds is subtracted elsewhere in Net Interest."
+    },
+    {
+      "match": "^Federal Pell Grant|^Pell Grants",
+      "text": "Need-based grants for low-income undergraduate students that do not have to be repaid."
+    },
+    {
+      "match": "Education for the Disadvantaged",
+      "text": "Title I grants to schools with high numbers of children from low-income families."
+    },
+    {
+      "match": "Special Education",
+      "text": "Grants to states to help pay for special education services for children with disabilities (IDEA)."
+    },
+    {
+      "match": "Head Start",
+      "text": "Early childhood education, health, and nutrition services for low-income children and families.",
+      "keywords": "early childhood preschool"
+    },
+    {
+      "match": "Tenant[- ]based Rental Assistance",
+      "text": "Housing Choice Vouchers (Section 8), which help low-income families pay rent in privately owned housing.",
+      "keywords": "Section 8 housing vouchers"
+    },
+    {
+      "match": "Federal-aid Highways",
+      "text": "Grants to states for building and maintaining highways and bridges, paid mostly from the Highway Trust Fund."
+    },
+    {
+      "match": "Disaster Relief Fund",
+      "text": "FEMA's main fund for responding to and recovering from presidentially declared disasters."
+    },
+    {
+      "match": "Civil Service Retirement and Disability Fund",
+      "text": "Pensions and disability payments for retired federal civilian employees."
+    },
+    {
+      "match": "Military Retirement Fund",
+      "text": "Pensions for retired military service members."
+    },
+    {
+      "match": "^Payments to Health Care Trust Funds",
+      "text": "A transfer from the Treasury's general fund into the Medicare trust funds, mainly to cover the share of Medicare Part B and Part D costs not paid by premiums. The trust funds record the same amount as negative 'Federal contributions', so the two cancel out. Locked: to change Medicare spending, adjust the trust fund accounts that pay benefits."
+    },
+    {
+      "match": "^Payments to Social Security Trust Funds",
+      "text": "A transfer from the general fund into the Social Security trust funds, such as income taxes collected on Social Security benefits. The trust funds record it as a matching negative entry. Locked as an internal transfer."
+    },
+    {
+      "match": "^Medicare Prescription Drug Account",
+      "text": "Medicare Part D: prescription drug coverage provided through private plans, paid from the Supplementary Medical Insurance trust fund."
+    },
+    {
+      "match": "^Premiums Collected",
+      "text": "Premiums paid by Medicare beneficiaries, mostly for Part B. Recorded as negative amounts because they offset Medicare spending."
+    },
+    {
+      "match": "^Foreign Military Sales Trust Fund",
+      "text": "A pass-through account: foreign governments deposit money to buy U.S. weapons and services, and the Pentagon pays contractors from it. Deposits show up as a matching negative entry, so it is locked."
+    },
+    {
+      "match": "^Military Retirement Fund",
+      "text": "Pensions for retired military service members."
+    },
+    {
+      "match": "^Benefits Programs|^Readjustment Benefits",
+      "agency": "Veterans",
+      "text": "Veterans' education and readjustment benefits, mainly the GI Bill."
+    },
+    {
+      "match": "^Cost of War Toxic Exposures Fund",
+      "text": "Health care and disability benefits for veterans exposed to burn pits, Agent Orange, and other toxic substances, created by the 2022 PACT Act.",
+      "keywords": "PACT Act burn pits"
+    },
+    {
+      "match": "^National Institutes of Health",
+      "text": "The National Institutes of Health: the largest public funder of biomedical research in the world, supporting research grants at universities and hospitals plus its own labs in Bethesda.",
+      "keywords": "NIH medical research"
+    },
+    {
+      "match": "^Medical Community Care",
+      "text": "Care for veterans from private doctors and hospitals outside the VA system, paid for by the VA (the Community Care / MISSION Act program).",
+      "keywords": "MISSION Act"
+    },
+    {
+      "match": "^Child Nutrition Programs",
+      "text": "School lunch and breakfast programs, the Child and Adult Care Food Program, and summer meals for low-income children.",
+      "keywords": "school lunch breakfast"
+    },
+    {
+      "match": "^Other Procurement, ",
+      "text": "Buying equipment not covered by the major weapons accounts: vehicles, communications and electronics, support equipment, and classified programs."
+    },
+    {
+      "match": "^Operations and Support",
+      "agency": "Homeland Security",
+      "text": "Day-to-day operations of this Homeland Security agency: personnel pay, detention and enforcement operations, equipment, and facilities."
+    },
+    {
+      "match": "^Shipbuilding and Conversion, Navy",
+      "text": "Building new Navy ships, including submarines, aircraft carriers, destroyers, and amphibious ships, and major ship conversions.",
+      "keywords": "submarines aircraft carriers ships"
+    },
+    {
+      "match": "^Student Financial Assistance",
+      "text": "Pell Grants for low-income undergraduates (the discretionary portion pays for most of the maximum award), plus Federal Work-Study and Supplemental Educational Opportunity Grants.",
+      "keywords": "Pell Grants work-study college"
+    },
+    {
+      "match": "^Combat and Operational Medicine",
+      "text": "Medical care and readiness for military forces, part of the military health system."
+    },
+    {
+      "match": "^Federal Direct Student Loan Program Account",
+      "text": "The estimated cost to the government of federal student loans made directly by the Department of Education. Because loans are repaid, this records the expected subsidy cost and later re-estimates, not the full amount lent.",
+      "keywords": "student loans"
+    },
+    {
+      "match": "^Weapons Activities",
+      "text": "Maintaining and modernizing the U.S. nuclear weapons stockpile, run by the National Nuclear Security Administration.",
+      "keywords": "nuclear weapons stockpile"
+    },
+    {
+      "match": "^Aircraft Procurement, ",
+      "text": "Buying military aircraft for this branch, such as fighters, bombers, tankers, helicopters, and transport planes, and modifying existing ones.",
+      "keywords": "F-35 fighters bombers"
+    },
+    {
+      "match": "^Missile Procurement, |^Weapons Procurement, Navy",
+      "text": "Buying missiles, munitions, and related weapons systems for this branch.",
+      "keywords": "missiles munitions"
+    },
+    {
+      "match": "^Commodity Credit Corporation Fund",
+      "text": "The main funding source for farm support programs: commodity price and income support payments, some conservation programs, and emergency farm aid.",
+      "keywords": "farm subsidies"
+    },
+    {
+      "match": "^Government Payment for Annuitants, Employees Health Benefits",
+      "text": "The government's share of health insurance premiums for retired federal employees in the Federal Employees Health Benefits program.",
+      "keywords": "FEHB"
+    },
+    {
+      "match": "^Project-based Rental Assistance",
+      "text": "Rental subsidies tied to specific privately owned apartment buildings that house low-income families, older adults, and people with disabilities.",
+      "keywords": "Section 8 housing"
+    },
+    {
+      "match": "^Federal Crop Insurance Corporation Fund",
+      "text": "Subsidized crop insurance that protects farmers against crop losses and price drops, run through private insurers.",
+      "keywords": "crop insurance farm"
+    },
+    {
+      "match": "^Transit Formula Grants",
+      "text": "Grants to cities and transit agencies for buses, rail systems, and other public transit, distributed by formula.",
+      "keywords": "public transit buses subway"
+    },
+    {
+      "match": "^Private Sector Care",
+      "text": "TRICARE care that service members, retirees, and families receive from civilian doctors and hospitals.",
+      "keywords": "TRICARE"
+    },
+    {
+      "match": "^Cost-sharing Reductions",
+      "text": "Payments that lower deductibles and copays for low-income people who buy silver plans on the ACA marketplaces.",
+      "keywords": "Obamacare ACA"
+    },
+    {
+      "match": "^Temporary Assistance for Needy Families",
+      "text": "TANF: block grants to states for cash assistance to low-income families with children, plus work programs and child care.",
+      "keywords": "TANF welfare"
+    },
+    {
+      "match": "^State and Tribal Assistance Grants",
+      "text": "EPA grants to states and tribes, mostly for clean water and drinking water infrastructure through the State Revolving Funds.",
+      "keywords": "clean water drinking water EPA"
+    },
+    {
+      "match": "^Children and Families Services Programs",
+      "text": "Social services for children and families, including Head Start, child welfare and abuse prevention, and community services block grants.",
+      "keywords": "Head Start"
+    },
+    {
+      "match": "^Community Development Fund",
+      "text": "Community Development Block Grants: flexible grants to cities and states for housing, infrastructure, and economic development in low- and moderate-income areas, plus some disaster recovery funds.",
+      "keywords": "CDBG"
+    },
+    {
+      "match": "^Department of Defense Medicare-Eligible Retiree Health Care Fund",
+      "text": "TRICARE for Life: health coverage that supplements Medicare for military retirees 65 and older.",
+      "keywords": "TRICARE for Life"
+    },
+    {
+      "match": "^Trust Fund Share of FAA Activities",
+      "text": "The part of the FAA's operating budget, mainly air traffic control, paid from the Airport and Airway Trust Fund, which is funded by airline ticket and fuel taxes.",
+      "keywords": "air traffic control FAA"
+    },
+    {
+      "match": "^Defense Production Act Purchases",
+      "text": "Funding under the Defense Production Act to expand U.S. production of critical materials and technologies, such as munitions inputs, critical minerals, and microelectronics."
+    },
+    {
+      "match": "^Medical Facilities",
+      "agency": "Veterans",
+      "text": "Building maintenance, utilities, and operation of VA hospitals and clinics."
+    },
+    {
+      "match": "^Medical Support and Compliance",
+      "agency": "Veterans",
+      "text": "Administrative and support costs of the VA health system, such as billing and management."
+    },
+    {
+      "match": "^Operation and Maintenance, Defense-wide",
+      "text": "Operating costs of Pentagon agencies that serve all branches, such as Special Operations Command, the Defense Logistics Agency, and the Missile Defense Agency's operations."
+    },
+    {
+      "match": "^Research, Development, Test,? and Evaluation",
+      "keywords": "R&D",
+      "text": "Developing and testing new military technology and weapons systems before they are bought in quantity."
+    },
+    {
+      "match": "^Public Housing",
+      "agency": "Housing",
+      "text": "Operating and repairing public housing developments owned by local housing authorities.",
+      "keywords": "public housing"
+    },
+    {
+      "match": "^Federal-aid Highways",
+      "text": "Grants to states for building and maintaining highways and bridges, paid mostly from the Highway Trust Fund.",
+      "keywords": "roads bridges infrastructure"
+    }
+  ],
+  "transfers": [
+    {
+      "match": "^(federal )?payments? (to|for) .*\\bfunds?\\b",
+      "cat": "M"
+    },
+    {
+      "match": "concurrent receipt accrual",
+      "cat": "M"
+    },
+    {
+      "match": "^foreign military sales trust fund",
+      "cat": "M"
+    }
+  ],
+  "aliases": {
+    "_note": "Extra search terms for agencies/bureaus (acronyms are also generated automatically).",
+    "Department of Defense--Military Programs": "DoD Pentagon military",
+    "Department of Veterans Affairs": "VA veterans",
+    "Department of Homeland Security": "DHS",
+    "U.S. Immigration and Customs Enforcement": "ICE",
+    "U.S. Customs and Border Protection": "CBP border",
+    "Transportation Security Administration": "TSA",
+    "Federal Bureau of Investigation": "FBI",
+    "Department of Housing and Urban Development": "HUD",
+    "National Aeronautics and Space Administration": "NASA space"
+  }
+}

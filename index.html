@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>US Federal Budget Balancer</title>
+  <meta name="description" content="Start from the President's budget and try to balance it: cut, grow, or eliminate federal spending and see what happens to the deficit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <div class="brand">
+        <h1>US Federal Budget Balancer</h1>
+        <p class="tagline">Start from the President's <span data-fy>FY</span> budget. Cut it, grow it, or zero it out, and see what happens to the deficit.</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="scoreboard" aria-live="polite">
+    <div class="wrap score-grid">
+      <div class="score">
+        <span class="label">Revenue</span>
+        <span class="val in" id="sc-rev">—</span>
+        <span class="sub" id="sc-rev-d"></span>
+      </div>
+      <div class="score">
+        <span class="label">Spending</span>
+        <span class="val out" id="sc-out">—</span>
+        <span class="sub" id="sc-out-d"></span>
+      </div>
+      <div class="score big">
+        <span class="label" id="sc-bal-label">Deficit</span>
+        <span class="val" id="sc-bal">—</span>
+        <span class="sub" id="sc-bal-d"></span>
+      </div>
+      <div class="meter" aria-hidden="true">
+        <div class="bar rev"><span id="bar-rev"></span></div>
+        <div class="bar out"><span id="bar-out"></span><i id="bar-out-base" title="Baseline spending"></i></div>
+      </div>
+    </div>
+    <div class="wrap mand-flag" id="mand-flag" hidden>
+      <span>⚠</span> <span id="mand-flag-text"></span>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <nav class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="spending">Spending</button>
+        <button role="tab" aria-selected="false" data-tab="revenue">Revenue</button>
+        <button role="tab" aria-selected="false" data-tab="changes">Your changes <span class="count" id="chg-count" hidden></span></button>
+        <button role="tab" aria-selected="false" data-tab="projections">Projections</button>
+      </nav>
+    </div>
+
+    <section data-panel="spending">
+      <div class="controls-bar">
+        <label class="switch-line" title="Mandatory spending is set by existing law rather than yearly appropriations">
+          <input type="checkbox" id="mand-toggle" class="switch">
+          <span><strong>Allow changes to mandatory programs</strong>
+            <small>Social Security, Medicare, Medicaid, SNAP and other programs set by existing law</small></span>
+        </label>
+        <input type="search" id="search" placeholder="Find a program or agency (e.g. NASA, Pell)" aria-label="Search programs">
+      </div>
+      <div class="legend">
+        <span class="chip D">Discretionary</span><span>set each year by Congress</span>
+        <span class="chip M">Mandatory</span><span>set by existing law</span>
+        <span class="chip X">Locked</span><span>interest, internal transfers, and offsetting receipts</span>
+      </div>
+      <div id="tree" class="tree" role="tree"></div>
+      <div id="search-results" class="tree" hidden></div>
+    </section>
+
+    <section data-panel="revenue" hidden>
+      <div class="note">Baseline revenue from the President's budget. Tax and tariff levers (rates, brackets, an editable income-tax curve, and tax breaks) arrive in a later phase.</div>
+      <div id="revenue"></div>
+    </section>
+
+    <section data-panel="changes" hidden>
+      <div class="changes-head">
+        <button class="btn" id="share">Copy share link</button>
+        <button class="btn ghost" id="reset-all">Reset everything</button>
+      </div>
+      <div id="changes"></div>
+    </section>
+
+    <section data-panel="projections" hidden>
+      <div class="note big-note">
+        <h2>Coming next: the long view</h2>
+        <p>The next phase projects your plan forward 10 and 30 years: deficits and debt in dollars and as a share of GDP, interest costs calculated from the debt you leave behind, and — if you reach a surplus — how long it takes to pay the debt down. Projections will use CBO's estimate of the President's budget and CBO's long-term outlook.</p>
+      </div>
+    </section>
+  </main>
+
+  <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <div class="drawer-card">
+      <button class="close" id="drawer-close" aria-label="Close">×</button>
+      <p class="crumbs" id="drawer-path"></p>
+      <h2 id="drawer-title"></h2>
+      <p id="drawer-desc"></p>
+      <dl id="drawer-facts"></dl>
+      <p class="links" id="drawer-links"></p>
+    </div>
+  </aside>
+
+  <footer class="wrap foot">
+    <p>Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>. Amounts are outlays for fiscal year <span data-fy-num></span>. This tool keeps everything else equal: it does not model how spending changes affect the economy. <span id="gen"></span></p>
+  </footer>
+  <div class="toast" id="toast" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

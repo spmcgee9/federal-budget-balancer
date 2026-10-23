@@ -1,0 +1,74 @@
+# Rebuilds data/budget.json from OMB's Public Budget Database, then publishes the site to GitHub Pages.
+# Runs on every push to main (and builds the data the first time if data/budget.json is missing), and on demand from the Actions tab ("Run workflow"), where you can
+# pick a different budget year when a new President's budget comes out.
+name: Build data and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      fy:
+        description: "Budget fiscal year (e.g. 2028)"
+        required: false
+        default: "2027"
+      pub:
+        description: "OMB upload folder for that budget (e.g. 2027/04). Leave blank to guess."
+        required: false
+        default: ""
+      rebuild:
+        description: "Download fresh data from OMB (otherwise the committed data/budget.json is used)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild budget data from OMB
+        id: rebuild
+        if: (github.event_name == 'workflow_dispatch' && inputs.rebuild) || hashFiles('data/budget.json') == ''
+        run: |
+          pip install openpyxl
+          ARGS="--fy ${{ inputs.fy || '2027' }}"
+          if [ -n "${{ inputs.pub }}" ]; then ARGS="$ARGS --pub ${{ inputs.pub }}"; fi
+          python scripts/build_data.py $ARGS
+
+      - name: Commit refreshed data
+        if: steps.rebuild.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/budget.json
+          git diff --cached --quiet || git commit -m "Refresh budget data (FY${{ inputs.fy || '2027' }})"
+          git push
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
