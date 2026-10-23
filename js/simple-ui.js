@@ -128,6 +128,9 @@ export function renderSimple() {
   const adv = el("button", "btn ghost", "Open Advanced mode for every line of the budget →");
   adv.addEventListener("click", () => goAdvanced());
   res.append(adv);
+  const how = el("a", "small how-link", "How these numbers are calculated");
+  how.href = "about.html#how";
+  res.append(how);
   right.append(res);
 
   grid.append(left, right);
@@ -146,12 +149,17 @@ function rowShell(name, desc) {
   const r = el("div", "simple-row");
   const head = el("div", "simple-head");
   const t = el("div", "simple-title");
-  t.append(el("span", "simple-name", name), el("span", "simple-desc", desc));
+  const nameLine = el("span", "simple-name-line");
+  const warn = el("span", "chip warn simple-warn", "⚠ Mandatory: needs a change in law");
+  warn.title = "This program's spending is set by permanent law, not yearly appropriations. Changing it takes new legislation.";
+  warn.hidden = true;
+  nameLine.append(el("span", "simple-name", name), warn);
+  t.append(nameLine, el("span", "simple-desc", desc));
   const eff = el("div", "simple-eff");
   head.append(t, eff);
   const ctl = el("div", "simple-ctl");
   r.append(head, ctl);
-  return { r, eff, ctl };
+  return { r, eff, ctl, warn };
 }
 
 function slider(min, max, step) {
@@ -161,14 +169,14 @@ function slider(min, max, step) {
 }
 
 function spendRow(L) {
-  const { r, eff, ctl } = rowShell(L.name, L.desc);
+  const { r, eff, ctl, warn } = rowShell(L.name, L.desc);
   const s = slider(-50, 50, 1);
   s.setAttribute("aria-label", L.name);
   const val = el("span", "lever-val");
   s.addEventListener("input", () => setSpend(L, +s.value));
   const note = el("span", "simple-custom", "");
   ctl.append(s, val, note);
-  rows.set("s:" + L.key, { kind: "spend", L, r, eff, s, val, note });
+  rows.set("s:" + L.key, { kind: "spend", L, r, eff, s, val, note, warn });
   return r;
 }
 
@@ -263,6 +271,10 @@ export function updateSimple() {
       const own = model.settings.get(R.L.nodes[0]);
       effText(R.eff, fy, t, true, !model.phaseOf(own));
       R.r.classList.toggle("changed", Math.abs(fy) > 0.05);
+      // Flag changes to mandatory programs right on the row, as well as in the banner.
+      const mand = nodes.some((n) => n.mChanged > 0);
+      R.warn.hidden = !mand;
+      R.r.classList.toggle("m-changed", mand);
     } else if (R.kind === "income") {
       if (!inc) {
         R.s.disabled = true; R.val.textContent = "custom";

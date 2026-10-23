@@ -137,8 +137,12 @@ Then visit http://localhost:8000.
 5. ✅ Economic assumptions (growth, interest rates, OMB vs. CBO forecasts, debt feedback) and behavioral response settings
 6. ✅ Proposed new programs and tax cuts (single-payer, pre-K, child care, UBI, free college, Social Security tax, tariff rebates…)
 7. ✅ Simple mode (default) with an Advanced toggle
-8. Methodology and About page
+8. ✅ Methodology and About page (`about.html`)
 9. UI clean-up
+
+## Credits
+
+Built by Sean McGee ([github.com/spmcgee9](https://github.com/spmcgee9), smcgee.dev@gmail.com). Coded with the assistance of Claude, an AI model made by Anthropic. See `about.html` for methodology, sources, and limitations.
 
 ## Caveats
 

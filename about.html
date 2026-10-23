@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About & Methodology · US Federal Budget Balancer</title>
+  <meta name="description" content="How the US Federal Budget Balancer works: data sources, methods, assumptions, limitations, and credits.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=dev">
+</head>
+<body class="doc-page">
+  <header class="masthead">
+    <div class="wrap masthead-row">
+      <div class="brand">
+        <h1><a href="./" class="home-link">US Federal Budget Balancer</a></h1>
+        <p class="tagline">About and methodology</p>
+      </div>
+      <a class="btn" href="./">← Back to the tool</a>
+    </div>
+  </header>
+
+  <main class="wrap doc">
+    <nav class="doc-toc" aria-label="On this page">
+      <a href="#about">About</a>
+      <a href="#how">How it works</a>
+      <a href="#spending">Spending</a>
+      <a href="#revenue">Revenue</a>
+      <a href="#proposals">Proposals</a>
+      <a href="#projections">Projections</a>
+      <a href="#limits">Limitations</a>
+      <a href="#sources">Sources</a>
+      <a href="#credits">Credits & contact</a>
+      <a href="#privacy">Privacy</a>
+    </nav>
+
+    <section id="about">
+      <h2>About</h2>
+      <p>The US Federal Budget Balancer lets you try to balance the federal budget yourself. It starts from the President's budget request for fiscal year 2027 and lets you cut or grow spending, change taxes, and switch on proposed new programs, then shows what your choices would do to deficits and the national debt over the next 30 years.</p>
+      <p>It's meant to show, in real numbers, why balancing the budget is hard: most spending goes to Social Security, Medicare, Medicaid, defense, and interest on the debt, and the population is aging. It isn't an official estimate and doesn't take a side; the numbers come from the Congressional Budget Office (CBO), the Office of Management and Budget (OMB), the IRS, and other published sources, and every lever shows where its estimate came from.</p>
+      <p>There are two modes. <strong>Simple</strong> mode offers about 17 big, familiar choices on one page. <strong>Advanced</strong> mode opens every account in the budget, dozens of tax levers, an editable income tax curve, proposals, long-term projections, and economic assumptions. Both modes work on the same plan, so you can switch at any time.</p>
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <p>Your plan is compared with a <strong>baseline</strong>: the President's FY2027 budget.</p>
+      <ul>
+        <li><strong>First year (FY2027):</strong> the scoreboard at the top uses OMB's account-level budget data, the same numbers the President's budget publishes.</li>
+        <li><strong>The next 30 years:</strong> projections use CBO's February 2026 current-law projections, adjusted for CBO's estimate of the President's 2027 spending proposals and for CBO's July 2026 update on tariffs (after the Supreme Court ended the IEEPA tariffs). The President's budget proposed no tax changes. Because the two agencies' estimates differ, FY2027 on the Projections tab is a little different from the scoreboard.</li>
+        <li><strong>Interest</strong> isn't something you can cut directly. It's calculated from the debt your plan leaves behind, at CBO's projected interest rates, so reducing deficits early also reduces interest costs, and the savings compound.</li>
+        <li><strong>Phase-ins:</strong> any change can take effect immediately or grow to full strength over 3, 5, or 10 years. Proposals come with a realistic default phase-in (for example, four years for single-payer health care).</li>
+        <li><strong>Scoring</strong> follows the conventions of CBO and the Joint Committee on Taxation: estimates include ordinary behavioral responses (people realize fewer capital gains when rates rise, imports fall when tariffs rise) but not effects on the overall economy, except where you turn them on under Assumptions.</li>
+      </ul>
+    </section>
+
+    <section id="spending">
+      <h2>Spending</h2>
+      <ul>
+        <li><strong>Data:</strong> OMB's Public Budget Database for the FY2027 budget: outlays for about 2,700 budget accounts, organized by budget function (defense, health, Social Security, and so on), subfunction, agency, and account. Changes apply to each account's year-by-year amounts through 2031, then grow with CBO's projection for that category.</li>
+        <li><strong>Mandatory vs. discretionary:</strong> about 62% of spending is mandatory: set by permanent law (Social Security, Medicare, Medicaid, and others) rather than yearly appropriations. Advanced mode locks it by default. Any change to it is flagged, because it requires Congress to change existing law.</li>
+        <li><strong>Locked items:</strong> net interest; offsetting receipts (such as Medicare premiums, which are netted against spending); and internal transfers, where one government account pays another. For example, the Treasury's payment into the Medicare trust funds appears once as a payment and again as a matching negative receipt. Cutting only one side would create savings that don't exist, so the paying side is locked; cut the programs the money pays for instead.</li>
+        <li><strong>Medicare cuts</strong> reduce benefit payments; premiums paid by beneficiaries stay the same.</li>
+      </ul>
+    </section>
+
+    <section id="revenue">
+      <h2>Revenue</h2>
+      <ul>
+        <li><strong>Tax levers</strong> (capital gains, corporate, payroll, estate, excise, new taxes) are mostly calibrated to CBO's published budget options and scaled to today's economy in proportion to GDP. Several CBO options predate the 2025 reconciliation law; those whose tax base it changed are tagged.</li>
+        <li><strong>Payroll taxes</strong> are computed from CBO's wage projections and the share of wages below the Social Security cap, with a 22% offset for lower income tax collections. A 1-point payroll tax with no cap comes out at about $1.3 trillion over 10 years, matching CBO.</li>
+        <li><strong>Tariffs</strong> are computed from CBO's customs revenue projections, with imports falling as rates rise (an import price elasticity of 2) and the usual 25% offset for lower income and payroll taxes. Retaliation and other economic effects aren't modeled.</li>
+        <li><strong>Tax breaks</strong> use OMB's FY2027 tax expenditure estimates. Repealing a break raises less than its published cost (people change behavior and breaks overlap), so the tool counts 75% by default; you can change this under Assumptions.</li>
+        <li><strong>The income tax curve</strong> is computed from IRS Statistics of Income data for tax year 2023, which show how much taxable income was taxed at each rate, by filing status. The tool rebuilds the distribution of taxable income from those figures (current law reproduces the IRS totals exactly) and applies any bracket schedule you draw. It includes an elasticity of taxable income of 0.25, meaning reported income falls as rates rise, and a calibration factor (0.85) so that raising every bracket 1 point matches CBO's estimate of about $1.2 trillion over 10 years. Married couples' brackets follow current law's relationship to single brackets (about double).</li>
+        <li><strong>The wealth tax</strong> has no official estimate; it uses the Penn Wharton Budget Model's and is marked as highly uncertain.</li>
+        <li>Levers are added independently. The tool doesn't model how they interact; for example, a higher income tax rate makes each deduction worth more. Very large combined plans are therefore approximate.</li>
+      </ul>
+    </section>
+
+    <section id="proposals">
+      <h2>Proposals</h2>
+      <p>The Proposals tab includes programs and tax cuts that have been proposed but aren't law, from across the political spectrum. Each cites its estimate, using CBO wherever possible. Where estimates disagree, you can choose low, middle, or high. Older estimates are held at the same share of GDP as when they were made, so they grow with the economy, and are tagged. Costs don't include any taxes a proposal's sponsors suggested to pay for it; use the Revenue tab to add those yourself. Universal basic income is computed from CBO's population projections, and the tax-break extensions from OMB's tax expenditure data.</p>
+    </section>
+
+    <section id="projections">
+      <h2>Projections and assumptions</h2>
+      <ul>
+        <li>Projections run from 2027 to 2056, CBO's long-term horizon, in dollars, inflation-adjusted dollars, or as a share of the economy (GDP). If a plan pays off the debt after 2056, the payoff year is extrapolated by holding 2056's revenue and spending shares of GDP, growth, and interest rate constant.</li>
+        <li><strong>Economic forecast:</strong> CBO's by default, or OMB's (faster growth, lower interest rates) for comparison.</li>
+        <li><strong>Growth:</strong> faster or slower growth changes revenue in proportion and mandatory spending partly (0.4% per 1% of GDP, since some benefits are tied to wages). Discretionary spending is set in dollars, so it doesn't change. A 0.1-point slower growth rate adds about $305 billion to deficits over 10 years; CBO's comparable rule of thumb is $317 billion.</li>
+        <li><strong>Interest rates:</strong> changes reach the average rate on the debt over about six years as older securities are refinanced. Rates 0.1 point higher add about $391 billion over 10 years; CBO's rule of thumb is $379 billion.</li>
+        <li><strong>Debt feedback</strong> (optional): each percentage point of debt-to-GDP above CBO's path raises interest rates by 0.02 points.</li>
+      </ul>
+    </section>
+
+    <section id="limits">
+      <h2>Limitations</h2>
+      <ul>
+        <li>This is a simplified model for exploring trade-offs. It is not an official cost estimate and isn't affiliated with any government agency.</li>
+        <li>Except for the optional assumptions, spending and tax changes don't feed back into economic growth, inflation, or interest rates.</li>
+        <li>Percentage changes apply to a program's whole budget; the tool doesn't model how a cut would be carried out (for example, which benefits or which people).</li>
+        <li>Social Security and Medicare trust fund rules aren't modeled: like CBO's baseline, projections assume scheduled benefits are paid even after the trust funds run out.</li>
+        <li>State and local budgets aren't included, even where federal changes would affect them.</li>
+        <li>Estimates of proposals vary widely, especially large ones like single-payer health care. Older estimates scaled to today's economy are approximate.</li>
+      </ul>
+    </section>
+
+    <section id="sources">
+      <h2>Data sources</h2>
+      <table class="data-table sources-table">
+        <tr><th>Source</th><th>Used for</th></tr>
+        <tr><td><a href="https://www.whitehouse.gov/omb/information-resources/budget/supplemental-materials/">OMB, Public Budget Database, FY2027</a></td><td>Account-level spending and receipts, 2025–2031</td></tr>
+        <tr><td><a href="https://www.whitehouse.gov/omb/information-resources/budget/analytical-perspectives/">OMB, Analytical Perspectives, FY2027</a></td><td>Tax expenditures (Table 10-1); OMB's economic assumptions</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/61882">CBO, The Budget and Economic Outlook: 2026 to 2036</a></td><td>10-year baseline (check)</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/62044">CBO, The Long-Term Budget Outlook Data: 2026 to 2056</a></td><td>30-year baseline, GDP, interest rates, wages</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/62385">CBO, An Analysis of Spending Proposals in the President's 2027 Budget</a></td><td>President's budget adjustments</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/62704">CBO, Updated Budgetary Projections of Tariffs (July 2026)</a></td><td>Tariff adjustment</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/61879">CBO, The Demographic Outlook: 2026 to 2056</a></td><td>Population and aging</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/62257">CBO, How Changes in Economic Conditions Might Affect the Federal Budget</a></td><td>Checking growth and interest-rate sensitivities</td></tr>
+        <tr><td><a href="https://www.cbo.gov/publication/60557">CBO, Options for Reducing the Deficit: 2025 to 2034</a> (via <a href="https://www.crfb.org/blogs/cbos-revenue-savings-options">CRFB</a>)</td><td>Most revenue levers</td></tr>
+        <tr><td><a href="https://www.irs.gov/statistics/soi-tax-stats-individual-income-tax-returns-complete-report-publication-1304">IRS Statistics of Income, tax year 2023</a></td><td>Income tax curve and "who pays"</td></tr>
+        <tr><td>Various (CBO, CRFB, Penn Wharton Budget Model, Georgetown CEW, Concord Coalition, American Action Forum, and others)</td><td>Proposal cost estimates; each proposal links its source</td></tr>
+      </table>
+      <p class="small">The data files and the scripts that build them are in the <a href="https://github.com/spmcgee9/federal-budget-balancer">GitHub repository</a>; the README explains how to update them when a new budget comes out.</p>
+    </section>
+
+    <section id="credits">
+      <h2>Credits and contact</h2>
+      <p>Built by <strong>Sean McGee</strong>.</p>
+      <p>This software was coded with the assistance of Claude, an AI model made by Anthropic.</p>
+      <ul class="plain">
+        <li>Contact: <a href="mailto:smcgee.dev@gmail.com">smcgee.dev@gmail.com</a></li>
+        <li>GitHub: <a href="https://github.com/spmcgee9">github.com/spmcgee9</a></li>
+        <li>Source code: <a href="https://github.com/spmcgee9/federal-budget-balancer">github.com/spmcgee9/federal-budget-balancer</a></li>
+      </ul>
+      <p>Found a problem or have a suggestion? Email or open an issue on GitHub.</p>
+    </section>
+
+    <section id="privacy">
+      <h2>Privacy</h2>
+      <p>There are no accounts, ads, or analytics. Your plan is stored in the page's web address (that's how share links work) and a few display preferences (such as Simple or Advanced mode) are saved in your browser. Nothing is sent to a server. Fonts are loaded from Google Fonts.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Built by Sean McGee · Coded with the assistance of Claude (Anthropic) · <a href="./">Back to the tool</a></p>
+  </footer>
+</body>
+</html>
