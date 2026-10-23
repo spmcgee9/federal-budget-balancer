@@ -222,6 +222,32 @@ export class BudgetModel {
     return k;
   }
 
+  // Projection category of a leaf, matching CBO's long-term categories.
+  projCat(leaf) {
+    if (leaf.cat === "D") return "disc";
+    if (leaf.cat === "I") return null;
+    const sub = leaf.id.slice(1, 4);
+    if (sub === "651") return "ss";
+    if (sub === "571") return "medicare";
+    if (sub === "551") return "health";
+    return "othm";
+  }
+
+  // Dollar change from the user's plan, by projection category and by OMB year (millions).
+  yearDeltas() {
+    const years = this.meta.years;
+    const out = {};
+    for (const leaf of this.leaves) {
+      const d = this.decidingSetting(leaf);
+      if (!d) continue;
+      const c = this.projCat(leaf);
+      if (!c) continue;
+      const row = out[c] || (out[c] = years.map(() => 0));
+      for (let i = 0; i < years.length; i++) row[i] += this.leafValue(leaf, i) - (leaf.v[i] || 0);
+    }
+    return { years, d: out };
+  }
+
   path(n) {
     const out = [];
     for (let p = n.parent; p; p = p.parent) out.unshift(p.name);

@@ -53,7 +53,7 @@
     "s551": "Health care services: Medicaid, ACA premium tax credits, CHIP, community health centers, and Indian Health Service.",
     "s552": "Health research and training, mainly the National Institutes of Health.",
     "s554": "Consumer and occupational health and safety, including the FDA and food safety programs.",
-    "f570": "Medicare: health insurance for people 65 and older and some people with disabilities. Hospital insurance (Part A) is funded mainly by payroll taxes; physician care (Part B) and prescription drugs (Part D) are funded by premiums and general revenue. Premiums appear here as negative amounts.",
+    "f570": "Medicare: health insurance for people 65 and older and some people with disabilities. Hospital insurance (Part A) is funded mainly by payroll taxes; physician care (Part B) and prescription drugs (Part D) are funded by premiums and general revenue. Premiums appear here as negative amounts. In this tool, cutting a Medicare trust fund account cuts gross benefit payments; premiums (the negative entries) stay the same, so beneficiaries' premiums are not reduced along with benefits.",
     "s571": "Medicare benefit payments and administration.",
     "f600": "Income security: programs that support people with low incomes, the unemployed, and retired federal workers.",
     "s601": "Retirement and disability programs other than Social Security, such as railroad retirement and black lung benefits.",
@@ -110,11 +110,11 @@
     },
     {
       "match": "Hospital Insurance Trust Fund",
-      "text": "Medicare Part A: hospital stays, skilled nursing facility care, hospice, and some home health care. Funded mainly by the Medicare payroll tax."
+      "text": "Medicare Part A: hospital stays, skilled nursing facility care, hospice, and some home health care. Funded mainly by the Medicare payroll tax. Cutting it here cuts benefit payments; Medicare premiums stay the same."
     },
     {
       "match": "Supplementary Medical Insurance Trust Fund",
-      "text": "Medicare Part B (doctor visits and outpatient care) and Part D (prescription drugs). Funded about three-quarters by general tax revenue and one-quarter by beneficiary premiums."
+      "text": "Medicare Part B (doctor visits and outpatient care) and Part D (prescription drugs). Funded about three-quarters by general tax revenue and one-quarter by beneficiary premiums. Cutting it here cuts benefit payments; Medicare premiums stay the same."
     },
     {
       "match": "^Grants to States for Medicaid",
@@ -242,7 +242,7 @@
     },
     {
       "match": "^Medicare Prescription Drug Account",
-      "text": "Medicare Part D: prescription drug coverage provided through private plans, paid from the Supplementary Medical Insurance trust fund."
+      "text": "Medicare Part D: prescription drug coverage provided through private plans, paid from the Supplementary Medical Insurance trust fund. Cutting it here cuts benefit payments; Medicare premiums stay the same."
     },
     {
       "match": "^Premiums Collected",

@@ -99,10 +99,67 @@
     </section>
 
     <section data-panel="projections" hidden>
-      <div class="note big-note">
-        <h2>Coming next: the long view</h2>
-        <p>The next phase projects your plan forward 10 and 30 years: deficits and debt in dollars and as a share of GDP, interest costs calculated from the debt you leave behind, and — if you reach a surplus — how long it takes to pay the debt down. Projections will use CBO's estimate of the President's budget and CBO's long-term outlook.</p>
+      <div class="proj-bar">
+        <div class="seg-ctl" role="group" aria-label="Units" id="proj-units">
+          <button data-units="usd" aria-pressed="true">Dollars</button>
+          <button data-units="real" aria-pressed="false" title="Adjusted for inflation to FY2026 dollars">Today's dollars</button>
+          <button data-units="gdp" aria-pressed="false">% of GDP</button>
+        </div>
+        <div class="seg-ctl" role="group" aria-label="Years shown" id="proj-horizon">
+          <button data-h="10" aria-pressed="false">10 years</button>
+          <button data-h="20" aria-pressed="false">20 years</button>
+          <button data-h="30" aria-pressed="true">30 years</button>
+        </div>
       </div>
+      <p class="proj-headline" id="proj-headline"></p>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="chart-card">
+        <h3>Debt held by the public</h3>
+        <p class="chart-sub">What the government owes to investors, at the end of each fiscal year.</p>
+        <div class="legend-row"><span><i class="ln plan"></i>Your plan</span><span><i class="ln base"></i>President's budget</span></div>
+        <div id="ch-debt"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Annual deficit or surplus</h3>
+        <p class="chart-sub">Bars show your plan: <span class="cut">green</span> for a surplus, <span class="add">red</span> for a deficit.</p>
+        <div class="legend-row"><span><i class="sq out"></i>Your plan (deficit)</span><span><i class="sq in"></i>Your plan (surplus)</span><span><i class="ln base"></i>President's budget</span></div>
+        <div id="ch-def"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Interest on the debt</h3>
+        <p class="chart-sub">Net interest is calculated from the debt your plan leaves behind. Lower debt means lower interest, which compounds.</p>
+        <div class="legend-row"><span><i class="ln plan"></i>Your plan</span><span><i class="ln base"></i>President's budget</span></div>
+        <div id="ch-int"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Where the money goes under your plan</h3>
+        <p class="chart-sub">Spending by category, with revenue as a dashed line. The gap between the top of the stack and the line is the deficit.</p>
+        <div class="legend-row" id="mix-legend"></div>
+        <div id="ch-mix"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Why it gets harder: an aging population</h3>
+        <p class="chart-sub">People 65 and older for every 100 people aged 25 to 64. Social Security and Medicare grow with this ratio, and so does the pressure on the budget.</p>
+        <div id="ch-demo"></div>
+      </div>
+
+      <details class="method">
+        <summary>How these projections work</summary>
+        <div id="method-body">
+          <p><strong>Starting point.</strong> CBO's February 2026 current-law projections for 2026–2056, which already reflect an aging population, rising health costs, interest rates, and economic growth.</p>
+          <p><strong>The President's budget.</strong> CBO's June 2026 estimate of the President's 2027 spending proposals is added for 2027–2036. The budget proposed no tax changes. After 2036 the budget's lower discretionary spending is held at its 2036 share of GDP. Customs revenue is reduced to reflect CBO's July 2026 tariff update after the Supreme Court ended the IEEPA tariffs (about $250 billion in 2026, mostly refunds, and about $0.7 trillion over 2027–2036; CBO gave no year-by-year figures, so that amount is spread across years in proportion to projected customs revenue).</p>
+          <p><strong>Your plan.</strong> For 2027–2031, your changes are applied to each account's year-by-year amounts in OMB's budget data, the same numbers as the Spending tab. After 2031, the change in each category (Social Security, Medicare, Medicaid and other health, other mandatory, discretionary) grows with CBO's projection for that category, so a 10% Social Security cut stays a 10% cut as the program grows.</p>
+          <p><strong>Interest.</strong> CBO's projected interest, plus interest on any extra or avoided debt at CBO's projected average interest rate on federal debt (3.5% in 2027, rising to 4.2%).</p>
+          <p><strong>Paying off the debt.</strong> If the debt isn't gone by 2056, it is projected further by holding 2056's revenue and spending shares of GDP, growth rate, and interest rate constant. That's an extrapolation, not a CBO projection.</p>
+          <p><strong>What's not modeled (yet).</strong> Changes in spending or taxes don't change economic growth or interest rates here. FY2027 differs slightly from the Spending tab because this tab uses CBO's estimates and the Spending tab uses OMB's. Independent analysts' totals for the President's budget vary with their assumptions.</p>
+          <p class="small" id="proj-sources"></p>
+        </div>
+      </details>
+      <details class="method">
+        <summary>Year-by-year table</summary>
+        <div class="table-wrap" id="proj-table"></div>
+      </details>
     </section>
   </main>
 
@@ -118,7 +175,7 @@
   </aside>
 
   <footer class="wrap foot">
-    <p>Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>. Amounts are outlays for fiscal year <span data-fy-num></span>. This tool keeps everything else equal: it does not model how spending changes affect the economy. <span id="gen"></span></p>
+    <p>Data: <a data-src href="#">OMB Public Budget Database</a>, Budget of the U.S. Government <span data-fy>FY</span>. Amounts are outlays for fiscal year <span data-fy-num></span>. Projections: Congressional Budget Office (see "How these projections work" on the Projections tab). This tool does not yet model how spending or tax changes affect the economy. <span id="gen"></span></p>
   </footer>
   <div class="toast" id="toast" hidden></div>
   <script type="module" src="js/app.js"></script>

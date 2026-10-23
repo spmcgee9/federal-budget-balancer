@@ -4,7 +4,7 @@ An interactive tool for trying to balance the U.S. federal budget. It starts fro
 
 Companion to the Federal Budget Explorer.
 
-## What it does (Phase 1)
+## Spending (Phase 1)
 
 - **Spending tree by budget function** (National Defense, Health, Medicare, Social Security…), drilling down to subfunctions, agencies/bureaus, and individual budget accounts.
 - **Adjust at any level.** Every row has an on/off switch, a percent slider (−100% to +100%), and a box for larger increases. Setting a category applies to everything inside it; you can then override individual accounts.
@@ -17,11 +17,23 @@ Locked rows: net interest (calculated from debt, coming in Projections), offsett
 
 Accounts with $0 in the budget year are hidden from the tree.
 
+## Projections (Phase 2)
+
+The **Projections** tab carries your plan forward to 2056: debt, deficits, and interest in dollars, inflation-adjusted dollars, or % of GDP; the spending mix; and an aging-population chart for context. It reports debt in 10, 20, and 30 years, total deficits over the next decade, and, if your plan gets there, the year the debt is paid off.
+
+How it works:
+- **Baseline:** CBO's February 2026 current-law projections, plus CBO's estimate of the President's 2027 spending proposals, plus CBO's July 2026 tariff update (after the Supreme Court ended the IEEPA tariffs). The President's budget proposed no tax changes.
+- **Your plan:** 2027–2031 changes come from OMB's year-by-year account data (the same numbers as the Spending tab); after 2031 each category's change grows with CBO's projection for that category.
+- **Interest:** CBO's baseline interest plus interest on the extra or avoided debt at CBO's projected average rate on federal debt.
+- Past 2056 (payoff only), 2056's ratios to GDP are held constant. Economic feedback isn't modeled yet.
+
 ## Data
 
-`data/budget.json` is built from OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Descriptions live in `data/descriptions.json` and can be edited by hand.
+- `data/budget.json`: OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Built by `scripts/build_data.py`.
+- `data/projections.json`: CBO projections, in billions of dollars. Built by `scripts/build_projections.py`.
+- `data/descriptions.json`: plain-language descriptions, search keywords, and internal-transfer rules. Edit by hand.
 
-### Rebuilding the data
+### Rebuilding the spending data
 
 Automatically: on GitHub, go to **Actions → Build data and deploy → Run workflow**. Enter the budget year (and OMB's upload folder if the default guess is wrong). The workflow downloads the files, rebuilds `data/budget.json`, commits it, and redeploys the site.
 
@@ -34,6 +46,18 @@ python scripts/build_data.py --outlays outlays_fy2027.xlsx --receipts receipts_f
 ```
 
 The script prints total outlays, receipts, and the deficit so you can check them against the budget's summary tables.
+
+### Rebuilding the projections
+
+Download CBO's workbooks into a folder and run `python scripts/build_projections.py --dir that_folder`:
+
+- Long-term budget projections: `51119-…-LTBO-Budget.xlsx` (cbo.gov/recurring-data/51119)
+- Long-term economic projections: `57054-…-LTBO-econ.xlsx` (cbo.gov/recurring-data/57054)
+- 10-year budget projections, used as a check: `51118-…-Budget-Projections.xlsx` (cbo.gov/recurring-data/51118)
+- CBO's analysis of the President's budget: `62385-data.xlsx` (cbo.gov/publication/62385)
+- Demographic outlook: `61879-Data.xlsx` (cbo.gov/publication/61879)
+
+The tariff adjustment is a constant at the top of the script; update or remove it when CBO publishes a new baseline.
 
 ## Running it locally
 
@@ -54,10 +78,10 @@ Then visit http://localhost:8000.
 ## Roadmap
 
 1. ✅ Spending tree, controls, mandatory lock, descriptions, change summary, share links
-2. Projections: 10- and 30-year deficits and debt ($ and % of GDP), interest calculated from your plan, debt payoff year, OMB vs. CBO economic assumptions
+2. ✅ Projections: 10-, 20-, and 30-year deficits and debt ($, today's $, % of GDP), interest calculated from your plan, debt payoff year
 3. Revenue levers: corporate, payroll, capital gains, estate, excise, tariffs, and tax breaks
 4. Editable income-tax curve calibrated to IRS income data
-5. Economic assumptions and behavioral response settings
+5. Economic assumptions (growth, interest rates, OMB vs. CBO forecasts) and behavioral response settings
 6. Proposed new programs (universal health care, universal pre-K, UBI, free college…)
 
 ## Caveats

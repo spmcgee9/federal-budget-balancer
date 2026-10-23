@@ -1,4 +1,5 @@
 import { BudgetModel, fmt, fmtPct } from "./model.js";
+import { initProjections, render as renderProjections } from "./projections-ui.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls, text) => {
@@ -22,11 +23,14 @@ const LOCK_TEXT = {
 };
 
 async function init() {
-  const [data, desc] = await Promise.all([
+  const [data, desc, proj] = await Promise.all([
     fetch("data/budget.json").then((r) => r.json()),
     fetch("data/descriptions.json").then((r) => r.json()).catch(() => null),
+    fetch("data/projections.json").then((r) => r.json()).catch(() => null),
   ]);
   model = new BudgetModel(data, desc);
+  if (proj) initProjections(proj, model);
+  else $("[data-panel=projections]").prepend(Object.assign(document.createElement("p"), { className: "note", textContent: "Projection data couldn't be loaded." }));
   document.querySelectorAll("[data-fy]").forEach((e) => (e.textContent = "FY" + model.fy));
   document.querySelectorAll("[data-fy-num]").forEach((e) => (e.textContent = model.fy));
   document.querySelectorAll("[data-src]").forEach((e) => (e.href = model.meta.sourceUrls?.[0] || "#"));
@@ -226,7 +230,14 @@ function refresh() {
   }
   renderScore();
   if (!$("[data-panel=changes]").hidden) renderChanges();
+  if (!$("[data-panel=projections]").hidden) scheduleProjections();
   updateChangeCount();
+}
+
+let projTimer;
+function scheduleProjections() {
+  clearTimeout(projTimer);
+  projTimer = setTimeout(renderProjections, 60);
 }
 
 let commitTimer;
@@ -490,6 +501,7 @@ function selectTab(name) {
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
   document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== name));
   if (name === "changes") renderChanges();
+  if (name === "projections") renderProjections();
 }
 
 function toast(msg) {
