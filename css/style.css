@@ -81,9 +81,9 @@ button { font: inherit; color: inherit; }
 
 /* tabs */
 .toolbar { margin: 18px 0 10px; }
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
 .tabs button { border: 0; background: none; padding: 9px 12px; cursor: pointer; color: var(--muted); font-weight: 500;
-  border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  border-bottom: 2px solid transparent; white-space: nowrap; }
 .tabs button[aria-selected=true] { color: var(--ink); border-color: var(--ink); }
 .count { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--ink); color: var(--bg); font-size: 11px; text-align: center; }
 
@@ -335,6 +335,9 @@ input.num:disabled { opacity: .45; }
   .lever-val { min-width: 80px; }
   .lever-eff { min-width: 110px; }
   .phase-ctl { padding: 0 0 8px; }
+  /* On phones the tab row can scroll sideways; hide the scrollbar (Safari shows it when "always show scroll bars" is on). */
+  .tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
   .kpi .val { font-size: 19px; }
   .row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lead amt" "ctrls ctrls"; }
   .row .ctrls { justify-content: flex-start; padding-left: 28px; }

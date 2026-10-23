@@ -30,6 +30,7 @@ export const GROUPS = [
   { id: "exc", name: "Excise taxes" },
   { id: "tar", name: "Tariffs" },
   { id: "new", name: "New taxes" },
+  { id: "est", name: "Estate and gift tax" },
   { id: "brk", name: "Tax breaks", note: "Deductions, exclusions, and credits. Repealing one raises less than its published cost: people change behavior and breaks overlap, so this tool counts 75% of OMB's estimate." },
 ];
 
@@ -137,6 +138,15 @@ export const LEVERS = [
     desc: "Changes the combined Medicare hospital insurance tax, which applies to all wages with no cap.",
     source: { name: "Computed from CBO wage projections (Feb 2026), with a 22% income tax offset", url: "https://www.cbo.gov/publication/62044" },
     score: (v, ctx) => ctx.P.wages.map((w, i) => (ctx.Y[i] < ctx.start ? 0 : (v / 100) * w * ctx.OFFSET)),
+  },
+
+  // ---------- estate ----------
+  {
+    id: "estate", group: "est", name: "Restore the pre-2018 estate tax exemption",
+    control: { type: "toggle", def: false },
+    desc: "The estate tax applies to estates above an exemption at a 40% rate; fewer than 1 in 1,000 estates pay it. The 2025 law set the exemption at $15 million per person ($30 million per couple), indexed for inflation. Before 2018 it was about $5.5 million, which would have grown to roughly $7 million in 2026. This restores that lower exemption.",
+    source: { name: "CBO's estimate of the 2025 reconciliation act (P.L. 119-21): the higher exemption costs $212 billion over 10 years, as cited by the Tax Law Center", url: "https://taxlawcenter.org/files/How-OBBBA-Weakens-the-Tax-System-2.pdf", detail: "$212 billion over 2025–2034, scaled to today's economy" },
+    score: (v, ctx) => gdpPath(ctx, v ? 212 * 1.04 : 0),
   },
 
   // ---------- excise ----------
@@ -251,4 +261,27 @@ export function scoreAll(ctx, model) {
 export function tenYear(ctx, L, v) {
   const p = L.score(v, ctx);
   return p.reduce((s, x, i) => s + (ctx.Y[i] >= ctx.start && ctx.Y[i] < ctx.start + 10 ? x : 0), 0);
+}
+
+// Tax-break levers from OMB's tax expenditure tables (data/tax_breaks.json).
+// Slider = how much of the break to scale back; revenue = share x OMB estimate x 75% (see GROUPS note).
+export const TAX_BREAK_REALIZATION = 0.75;
+export function taxBreakLevers(tb) {
+  return tb.breaks.map((b) => ({
+    id: b.id, group: "brk", name: b.name,
+    control: { type: "slider", min: 0, max: 100, step: 5, def: 0, fmt: (v) => (v === 100 ? "Repeal" : v === 0 ? "Keep" : `Cut ${v}%`) },
+    desc: b.desc,
+    source: { name: tb.source, url: tb.url, detail: `OMB line items: ${b.omb.join("; ")}. Counted at 75% of OMB's estimate.` },
+    score: (v, ctx) => {
+      const last = b.years[b.years.length - 1];
+      const iLast = ctx.Y.indexOf(last);
+      return ctx.Y.map((y, i) => {
+        if (y < ctx.start || !v) return 0;
+        const k = b.years.indexOf(y);
+        // After OMB's last year, hold the break's share of GDP constant (expired breaks stay at zero).
+        const val = k >= 0 ? b.v[k] : b.v[b.v.length - 1] * (ctx.P.gdp[i] / ctx.P.gdp[iLast]);
+        return (v / 100) * val * TAX_BREAK_REALIZATION;
+      });
+    },
+  }));
 }

@@ -1,6 +1,6 @@
 import { BudgetModel, fmt, fmtPct } from "./model.js";
 import { initProjections, render as renderProjections } from "./projections-ui.js";
-import { makeCtx, scoreAll } from "./levers.js";
+import { makeCtx, scoreAll, addLevers, taxBreakLevers } from "./levers.js";
 import { initRevenue, renderRevenue, updateRevenue, revenueChanges, PHASES } from "./revenue-ui.js";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -25,11 +25,13 @@ const LOCK_TEXT = {
 };
 
 async function init() {
-  const [data, desc, proj] = await Promise.all([
+  const [data, desc, proj, breaks] = await Promise.all([
     fetch("data/budget.json").then((r) => r.json()),
     fetch("data/descriptions.json").then((r) => r.json()).catch(() => null),
     fetch("data/projections.json").then((r) => r.json()).catch(() => null),
+    fetch("data/tax_breaks.json").then((r) => r.json()).catch(() => null),
   ]);
+  if (breaks) addLevers(taxBreakLevers(breaks));
   model = new BudgetModel(data, desc);
   if (proj) {
     const ctx = makeCtx(proj, model.fy);

@@ -27,10 +27,22 @@ How it works:
 - **Interest:** CBO's baseline interest plus interest on the extra or avoided debt at CBO's projected average rate on federal debt.
 - Past 2056 (payoff only), 2056's ratios to GDP are held constant. Economic feedback isn't modeled yet.
 
+## Revenue (Phase 3)
+
+The **Revenue** tab has levers for individual income tax brackets and a surtax, capital gains (with a revenue curve that peaks near a 28% rate), corporate taxes, payroll taxes (Social Security cap and rates, Medicare rate), the estate tax, excise taxes, tariffs, a VAT, carbon tax, financial transaction tax, and wealth tax, plus 19 of the largest tax breaks (scale back or repeal). Each shows its first-year and 10-year effect, its source, and how it was calibrated.
+
+- Most levers are calibrated to CBO's budget options and scaled to today's economy in proportion to GDP. Estimates whose tax base the 2025 reconciliation law changed are tagged "pre-2025-law estimate."
+- Payroll levers are computed from CBO's wage and taxable-share projections; tariffs from CBO's customs projections with an import response.
+- Tax breaks use OMB's FY2027 tax expenditure estimates, counted at 75% because repeal raises less than the published cost (behavior and overlaps).
+- The wealth tax has no official estimate; it uses the Penn Wharton Budget Model's and is flagged as highly uncertain.
+- Levers are added independently; interactions between them aren't modeled.
+- **Phase-in:** every change, spending or revenue, can take effect immediately or ramp in over 3, 5, or 10 years (a plan-wide default, with a per-item override in its "What is this?" panel).
+
 ## Data
 
 - `data/budget.json`: OMB's **Public Budget Database** for the President's budget: account-level outlays and receipts, FY2025 (actual) through FY2031, in millions of dollars. Built by `scripts/build_data.py`.
 - `data/projections.json`: CBO projections, in billions of dollars. Built by `scripts/build_projections.py`.
+- `data/tax_breaks.json`: OMB tax expenditure estimates for the tax-break levers. Built by `scripts/build_tax_breaks.py --file ap_10_tables_fy2027.xlsx` (from the Analytical Perspectives page).
 - `data/descriptions.json`: plain-language descriptions, search keywords, and internal-transfer rules. Edit by hand.
 
 ### Rebuilding the spending data
@@ -79,7 +91,7 @@ Then visit http://localhost:8000.
 
 1. ✅ Spending tree, controls, mandatory lock, descriptions, change summary, share links
 2. ✅ Projections: 10-, 20-, and 30-year deficits and debt ($, today's $, % of GDP), interest calculated from your plan, debt payoff year
-3. Revenue levers: corporate, payroll, capital gains, estate, excise, tariffs, and tax breaks
+3. ✅ Revenue levers (income, capital gains, corporate, payroll, estate, excise, tariffs, new taxes, tax breaks) and phase-ins
 4. Editable income-tax curve calibrated to IRS income data
 5. Economic assumptions (growth, interest rates, OMB vs. CBO forecasts) and behavioral response settings
 6. Proposed new programs (universal health care, universal pre-K, UBI, free college…)
